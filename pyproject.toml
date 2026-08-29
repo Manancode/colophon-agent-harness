@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "colophon"
+version = "0.1.0"
+description = "Spec-first video generation with machine-checkable taste: a closed motion grammar, seven deterministic QA gates, and a reproducible fingerprint for every render."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "The Colophon Authors" }]
+keywords = [
+    "video",
+    "generation",
+    "deterministic",
+    "agent",
+    "html-css",
+    "motion-design",
+    "provenance",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Software Development :: Quality Assurance",
+]
+
+# The core package is pure standard library by design. Nothing you depend on
+# can change the bytes your renderer emits. Pillow is needed only for the
+# dev-time review tooling.
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/Manancode/colophon-agent-harness"
+Repository = "https://github.com/Manancode/colophon-agent-harness.git"
+Issues = "https://github.com/Manancode/colophon-agent-harness/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pillow>=10.0",
+]
+
+[project.scripts]
+colophon = "colophon.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["colophon*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

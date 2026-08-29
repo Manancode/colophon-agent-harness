@@ -1,0 +1,92 @@
+# ---------------------------------------------------------------------------
+# Colophon — what never leaves this machine
+#
+# Rule: if it can be regenerated from the spec, it is not source.
+# `runs/` is the big one — 3 GB of rendered attempts, contact sheets and QA
+# transcripts. All of it is reproducible from examples/*/spec.json.
+# ---------------------------------------------------------------------------
+
+# --- Derived run data (regenerable; never commit) --------------------------
+# Leading slashes matter. Without them these would also swallow the
+# source package at colophon/runs/, which is very much not derived data.
+/runs/
+/scratch/
+/experiments/
+/private/
+/local/
+/work/
+
+# --- Renderer scratch ------------------------------------------------------
+# HyperFrames writes a UUID-named work dir inside each attempt. Covered by
+# /runs/ above, but listed explicitly in case anyone renders elsewhere.
+colophon-render.mp4
+video-only.mp4
+
+# --- Python ----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+build/
+dist/
+.eggs/
+.venv/
+venv/
+env/
+
+# --- Media (all generated; logo/diagram exceptions re-included below) -------
+*.mp4
+*.mov
+*.webm
+*.mkv
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.pdf
+!docs/assets/**/*.png
+!docs/assets/**/*.svg
+
+# --- Node (renderer / tooling) ---------------------------------------------
+node_modules/
+.npm/
+.pnpm-store/
+
+# --- Secrets and credentials -----------------------------------------------
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+service-account*.json
+.netrc
+.token
+
+# --- Test and lint caches ---------------------------------------------------
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# --- Editors and OS ---------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- Local-only notes -------------------------------------------------------
+# Anything named this way is working scratch and is never published.
+*.local.md
+NOTES.local.*
+*.private.*
