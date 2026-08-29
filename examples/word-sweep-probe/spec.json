@@ -1,0 +1,48 @@
+{
+  "brand": {
+    "name": "Word-sweep probe",
+    "tokens": {
+      "accent": "#0A84FF",
+      "bg": "#F5F5F5",
+      "fg": "#0B0B0D",
+      "muted": "#5A5A5F",
+      "hair": "#E2E2E5"
+    }
+  },
+  "canvas": {
+    "background": "#F5F5F5",
+    "fps": 30,
+    "height": 1080,
+    "width": 1920
+  },
+  "claims": [
+    {
+      "claim_id": "c-title",
+      "kind": "title",
+      "source": "probe",
+      "text": "Create an agent that lives in chats"
+    }
+  ],
+  "notes": "Treatment probe: one scene, one motion (word-sweep). Validates the entrance renders end-to-end, per-word staggering is visible, composition length is the scene's data-duration (not the animation extent), and the opacity-nesting subtree drop does not occur.",
+  "scenes": [
+    {
+      "asset_ids": [],
+      "duration_s": 4.0,
+      "motion": "word-sweep",
+      "role": "hook",
+      "scene_id": "scene_probe",
+      "title_claim_id": "c-title",
+      "treatment": "hero-centered",
+      "treatment_params": {}
+    }
+  ],
+  "spec_id": "word-sweep-probe-01",
+  "spec_version": "0.1",
+  "timeline": {
+    "overlap_s": 0.0,
+    "policy": "adjacent",
+    "transition": "cut",
+    "transition_ms": 0
+  },
+  "title": "Word-sweep treatment probe"
+}

@@ -1,0 +1,82 @@
+{
+  "brand": {
+    "name": "Cadence",
+    "tokens": {
+      "accent": "#4F8CFF",
+      "bg": "#0B0B12",
+      "fg": "#F5F5F7"
+    },
+    "voice": {
+      "narrator": "alloy",
+      "rate": 1.0
+    }
+  },
+  "canvas": {
+    "background": "#0B0B12",
+    "fps": 30,
+    "height": 1080,
+    "width": 1920
+  },
+  "notes": "One scene per motion, all on the same treatment (hero-centered) with identical content, so the only variable is the motion. Rendered at 2.5s each so every motion has room to complete. Sampled at keyframe times (0.05/0.20/0.35/0.50/0.80/1.50s) rather than end-of-scene, because end-of-scene is where all motions converge and look identical.",
+  "spec_id": "motion-strip-01",
+  "spec_version": "0.1",
+  "timeline": {
+    "overlap_s": 0.0,
+    "policy": "adjacent",
+    "transition": "cut",
+    "transition_ms": 0
+  },
+  "claims": [
+    {
+      "claim_id": "k-title",
+      "kind": "title",
+      "source": "brief.md#positioning",
+      "text": "Cadence Ranks Every Failure"
+    },
+    {
+      "claim_id": "k-narration",
+      "kind": "narration",
+      "source": "brief.md#positioning",
+      "text": "CI failures, ranked by engineering time saved."
+    }
+  ],
+  "scenes": [
+    {
+      "asset_ids": [],
+      "duration_s": 2.5,
+      "motion": "fade-rise",
+      "narration_claim_id": "k-narration",
+      "renderer_hints": {},
+      "role": "hook",
+      "scene_id": "strip__fade_rise",
+      "title_claim_id": "k-title",
+      "treatment": "hero-centered",
+      "treatment_params": {}
+    },
+    {
+      "asset_ids": [],
+      "duration_s": 2.5,
+      "motion": "word-sweep",
+      "narration_claim_id": "k-narration",
+      "renderer_hints": {},
+      "role": "hook",
+      "scene_id": "strip__word_sweep",
+      "title_claim_id": "k-title",
+      "treatment": "hero-centered",
+      "treatment_params": {}
+    },
+    {
+      "asset_ids": [],
+      "duration_s": 2.5,
+      "motion": "thinking-pulse",
+      "narration_claim_id": "k-narration",
+      "renderer_hints": {},
+      "role": "hook",
+      "scene_id": "strip__thinking_pulse",
+      "title_claim_id": "k-title",
+      "treatment": "hero-centered",
+      "treatment_params": {}
+    }
+  ],
+  "title": "Cadence motion time-strip"
+}

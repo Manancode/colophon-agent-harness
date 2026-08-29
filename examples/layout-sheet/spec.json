@@ -1,0 +1,322 @@
+{
+  "brand": {
+    "name": "Cadence",
+    "tokens": {
+      "accent": "#4F8CFF",
+      "bg": "#0B0B12",
+      "fg": "#F5F5F7"
+    },
+    "voice": {
+      "narrator": "alloy",
+      "rate": 1.0
+    }
+  },
+  "canvas": {
+    "background": "#0B0B12",
+    "fps": 30,
+    "height": 1080,
+    "width": 1920
+  },
+  "claims": [
+    {
+      "claim_id": "k-s01-title",
+      "kind": "title",
+      "source": "brief.md#positioning",
+      "text": "Cadence"
+    },
+    {
+      "claim_id": "k-s01-narration",
+      "kind": "narration",
+      "source": "brief.md#positioning",
+      "text": "CI failures, ranked."
+    },
+    {
+      "claim_id": "k-s02-title",
+      "kind": "title",
+      "source": "brief.md#positioning",
+      "text": "Cadence"
+    },
+    {
+      "claim_id": "k-s02-narration",
+      "kind": "narration",
+      "source": "brief.md#positioning",
+      "text": "For engineering teams, a red pipeline becomes a ranked list of fixes."
+    },
+    {
+      "claim_id": "k-s03-title",
+      "kind": "title",
+      "source": "brief.md#problem",
+      "text": "Hours Lost Every Week"
+    },
+    {
+      "claim_id": "k-s03-narration",
+      "kind": "narration",
+      "source": "brief.md#problem",
+      "text": "Your team loses hours to failures buried in CI logs."
+    },
+    {
+      "claim_id": "k-s04-title",
+      "kind": "title",
+      "source": "brief.md#problem",
+      "text": "Noise, Not Signal"
+    },
+    {
+      "claim_id": "k-s04-narration",
+      "kind": "narration",
+      "source": "brief.md#problem",
+      "text": "Every failure looks identical until someone reads the log."
+    },
+    {
+      "claim_id": "k-s05-title",
+      "kind": "title",
+      "source": "brief.md#capability",
+      "text": "What It Does"
+    },
+    {
+      "claim_id": "k-s05-narration",
+      "kind": "narration",
+      "source": "brief.md#capability",
+      "text": "Cadence reruns failed jobs, labels them flaky, and clusters every failing test."
+    },
+    {
+      "claim_id": "k-s06-title",
+      "kind": "title",
+      "source": "brief.md#capability",
+      "text": "Inside The Queue"
+    },
+    {
+      "claim_id": "k-s06-narration",
+      "kind": "narration",
+      "source": "brief.md#capability",
+      "text": "Reruns failed jobs, labels flaky tests, and ranks each fix by time saved."
+    },
+    {
+      "claim_id": "k-s07-title",
+      "kind": "title",
+      "source": "brief.md#differentiator",
+      "text": "Logs Are Not Answers"
+    },
+    {
+      "claim_id": "k-s07-narration",
+      "kind": "narration",
+      "source": "brief.md#differentiator",
+      "text": "Logs tell you what broke. Answers tell you what to fix first."
+    },
+    {
+      "claim_id": "k-s08-title",
+      "kind": "title",
+      "source": "brief.md#differentiator",
+      "text": "Two Ways To Spend Monday"
+    },
+    {
+      "claim_id": "k-s08-narration",
+      "kind": "narration",
+      "source": "brief.md#differentiator",
+      "text": "Other tools stop at logs, but Cadence ranks the fix by engineering time saved."
+    },
+    {
+      "claim_id": "k-s09-title",
+      "kind": "title",
+      "source": "brief.md#proof",
+      "text": "Faster To Green"
+    },
+    {
+      "claim_id": "k-s09-narration",
+      "kind": "quote",
+      "source": "brief.md#proof",
+      "text": "Teams using Cadence cut mean time to green dramatically."
+    },
+    {
+      "claim_id": "k-s10-title",
+      "kind": "title",
+      "source": "brief.md#proof",
+      "text": "40%"
+    },
+    {
+      "claim_id": "k-s10-narration",
+      "kind": "narration",
+      "source": "brief.md#proof",
+      "text": "Faster to green across 200 pilot repositories."
+    },
+    {
+      "claim_id": "k-s11-title",
+      "kind": "title",
+      "source": "brief.md#cta",
+      "text": "Start In Five Minutes"
+    },
+    {
+      "claim_id": "k-s11-narration",
+      "kind": "narration",
+      "source": "brief.md#cta",
+      "text": "Install the GitHub App. No YAML. Visit cadence.dev."
+    },
+    {
+      "claim_id": "k-s12-title",
+      "kind": "title",
+      "source": "brief.md#cta",
+      "text": "Ship Green"
+    },
+    {
+      "claim_id": "k-s12-narration",
+      "kind": "narration",
+      "source": "brief.md#cta",
+      "text": "Get your first ranked fix queue today at cadence.dev."
+    }
+  ],
+  "notes": "Layout contact sheet. One scene per treatment in the grammar, motion held at baseline fade-rise, brand held constant. Purpose: see all twelve layouts side by side for the first time and judge which ones are actually good. Not a deliverable video.",
+  "scenes": [
+    {
+      "asset_ids": [],
+      "duration_s": 3.0,
+      "motion": "fade-rise",
+      "narration_claim_id": "k-s01-narration",
+      "renderer_hints": {},
+      "role": "hook",
+      "scene_id": "s01-hero-centered",
+      "title_claim_id": "k-s01-title",
+      "treatment": "hero-centered",
+      "treatment_params": {}
+    },
+    {
+      "asset_ids": [],
+      "duration_s": 3.0,
+      "motion": "fade-rise",
+      "narration_claim_id": "k-s02-narration",
+      "renderer_hints": {},
+      "role": "hook",
+      "scene_id": "s02-hero-split",
+      "title_claim_id": "k-s02-title",
+      "treatment": "hero-split",
+      "treatment_params": {}
+    },
+    {
+      "asset_ids": [],
+      "duration_s": 3.0,
+      "motion": "fade-rise",
+      "narration_claim_id": "k-s03-narration",
+      "renderer_hints": {},
+      "role": "problem",
+      "scene_id": "s03-statement-left",
+      "title_claim_id": "k-s03-title",
+      "treatment": "statement-left",
+      "treatment_params": {}
+    },
+    {
+      "asset_ids": [],
+      "duration_s": 3.0,
+      "motion": "fade-rise",
+      "narration_claim_id": "k-s04-narration",
+      "renderer_hints": {},
+      "role": "problem",
+      "scene_id": "s04-statement-right",
+      "title_claim_id": "k-s04-title",
+      "treatment": "statement-right",
+      "treatment_params": {}
+    },
+    {
+      "asset_ids": [],
+      "duration_s": 3.0,
+      "motion": "fade-rise",
+      "narration_claim_id": "k-s05-narration",
+      "renderer_hints": {},
+      "role": "capability",
+      "scene_id": "s05-feature-rows",
+      "title_claim_id": "k-s05-title",
+      "treatment": "feature-rows",
+      "treatment_params": {}
+    },
+    {
+      "asset_ids": [],
+      "duration_s": 3.0,
+      "motion": "fade-rise",
+      "narration_claim_id": "k-s06-narration",
+      "renderer_hints": {},
+      "role": "capability",
+      "scene_id": "s06-ui-frame",
+      "title_claim_id": "k-s06-title",
+      "treatment": "ui-frame",
+      "treatment_params": {}
+    },
+    {
+      "asset_ids": [],
+      "duration_s": 3.0,
+      "motion": "fade-rise",
+      "narration_claim_id": "k-s07-narration",
+      "renderer_hints": {},
+      "role": "differentiator",
+      "scene_id": "s07-rebuttal-right",
+      "title_claim_id": "k-s07-title",
+      "treatment": "rebuttal-right",
+      "treatment_params": {}
+    },
+    {
+      "asset_ids": [],
+      "duration_s": 3.0,
+      "motion": "fade-rise",
+      "narration_claim_id": "k-s08-narration",
+      "renderer_hints": {},
+      "role": "differentiator",
+      "scene_id": "s08-compare-columns",
+      "title_claim_id": "k-s08-title",
+      "treatment": "compare-columns",
+      "treatment_params": {}
+    },
+    {
+      "asset_ids": [],
+      "duration_s": 3.0,
+      "motion": "fade-rise",
+      "narration_claim_id": "k-s09-narration",
+      "renderer_hints": {},
+      "role": "proof",
+      "scene_id": "s09-quote-card",
+      "title_claim_id": "k-s09-title",
+      "treatment": "quote-card",
+      "treatment_params": {}
+    },
+    {
+      "asset_ids": [],
+      "duration_s": 3.0,
+      "motion": "fade-rise",
+      "narration_claim_id": "k-s10-narration",
+      "renderer_hints": {},
+      "role": "proof",
+      "scene_id": "s10-stat-hero",
+      "title_claim_id": "k-s10-title",
+      "treatment": "stat-hero",
+      "treatment_params": {}
+    },
+    {
+      "asset_ids": [],
+      "duration_s": 3.0,
+      "motion": "fade-rise",
+      "narration_claim_id": "k-s11-narration",
+      "renderer_hints": {},
+      "role": "cta",
+      "scene_id": "s11-cta-command",
+      "title_claim_id": "k-s11-title",
+      "treatment": "cta-command",
+      "treatment_params": {}
+    },
+    {
+      "asset_ids": [],
+      "duration_s": 3.0,
+      "motion": "fade-rise",
+      "narration_claim_id": "k-s12-narration",
+      "renderer_hints": {},
+      "role": "cta",
+      "scene_id": "s12-cta-panel",
+      "title_claim_id": "k-s12-title",
+      "treatment": "cta-panel",
+      "treatment_params": {}
+    }
+  ],
+  "spec_id": "layout-sheet-01",
+  "spec_version": "0.1",
+  "timeline": {
+    "overlap_s": 0.0,
+    "policy": "adjacent",
+    "transition": "cut",
+    "transition_ms": 0
+  },
+  "title": "Layout contact sheet — all twelve treatments"
+}

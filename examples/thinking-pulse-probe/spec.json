@@ -1,0 +1,55 @@
+{
+  "spec_id": "thinking-pulse-probe-01",
+  "spec_version": "0.1",
+  "title": "Thinking-pulse treatment probe",
+  "notes": "Treatment probe: one scene, one motion (thinking-pulse). The figure ('01') pulses twice in scale, suggesting the agent is being initialized. The same scene without the motion would just fade-rise. The probe verifies the centerpiece pulses, the parent fade-rise does not conflict, and the composition length is the scene's data-duration (not the animation extent).",
+  "brand": {
+    "name": "Thinking-pulse probe",
+    "tokens": {
+      "accent": "#0A84FF",
+      "bg": "#F5F5F5",
+      "fg": "#0B0B0D",
+      "muted": "#5A5A5F",
+      "hair": "#E2E2E5"
+    }
+  },
+  "canvas": {
+    "background": "#F5F5F5",
+    "fps": 30,
+    "width": 1920,
+    "height": 1080
+  },
+  "claims": [
+    {
+      "claim_id": "c-figure",
+      "kind": "title",
+      "source": "probe",
+      "text": "01"
+    },
+    {
+      "claim_id": "c-cap",
+      "kind": "narration",
+      "source": "probe",
+      "text": "Initializing agent"
+    }
+  ],
+  "scenes": [
+    {
+      "scene_id": "scene_probe",
+      "role": "proof",
+      "treatment": "stat-hero",
+      "motion": "thinking-pulse",
+      "duration_s": 4.0,
+      "title_claim_id": "c-figure",
+      "narration_claim_id": "c-cap",
+      "asset_ids": [],
+      "treatment_params": {}
+    }
+  ],
+  "timeline": {
+    "policy": "adjacent",
+    "transition": "cut",
+    "transition_ms": 0,
+    "overlap_s": 0.0
+  }
+}
