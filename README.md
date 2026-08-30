@@ -2,7 +2,7 @@
 
 **Spec-first video generation with machine-checkable taste.**
 
-A closed motion grammar, thirteen deterministic QA gates, and a reproducible
+A closed motion grammar, fourteen deterministic QA gates, and a reproducible
 fingerprint for every render — so that what a viewer *feels* is the only thing
 left to argue about.
 
@@ -79,11 +79,14 @@ The full command surface:
 | `validate` | validate spec and timeline |
 | `emit` | spec → editable HTML/CSS project |
 | `render` | project → MP4 |
-| `qa` | run the thirteen deterministic gates |
+| `qa` | run the fourteen deterministic gates |
 | `review` | extract frames and build a contact sheet |
+| `record-review` | validate an independent review and merge the verdicts |
 | `repair` | apply targeted spec repairs |
+| `design` | run the repair loop on a spec (`--render` also drives the renderer) |
 | `deliver` | run the whole pipeline end to end |
 | `resume` | show the resumable attempt |
+| `bench` | compare harnesses; `--agents` runs real codex/claude |
 
 ---
 
@@ -134,26 +137,34 @@ decision with a rationale, not a convenience.
 
 ---
 
-## The thirteen gates
+## The fourteen gates
 
 Every gate is deterministic. **No stage calls a model.** Stages are
 order-independent, so any single one can be re-run alone.
 
-| # | Gate | Catches |
-|---|---|---|
-| 1 | `spec_validate` | unknown enum values, missing required fields, malformed structure |
-| 2 | `timeline_continuity` | gaps, undeclared overlaps, scenes off the clock |
-| 3 | `narrative_order` | a `cta` in the opening beat, roles out of sequence |
-| 4 | `static_html` | lint on the emitted markup before anything is rendered |
-| 5 | `canvas_audit` | wrong background, stray `background-image`, invisible text |
-| 6 | `media_contract` | the file on disk matches what the spec promised |
-| 7 | `claim_grounding` | every on-screen claim traces back to a supplied source |
-| 8 | `ai_slop_detector` | cream+orange palette, sparkle glyph in copy, neon glow / ticker bar / tracked-out heading in CSS |
-| 9 | `color_consistency` | emitted `--accent` matches the brand token (no off-brand hue) |
-| 10 | `centerpiece_invariant` | exactly one motion target per scene; `thinking-pulse` requires one |
-| 11 | `motion_accessibility` | missing `prefers-reduced-motion`, or motion fast enough to read as flicker (WCAG 2.3.1 / 2.3.3) |
-| 12 | `motion_pixel_velocity` | motion slower than ~1px/frame stutters (no sub-pixel render); also word-sweep stagger below 2 frames |
-| 13 | `delivery_contract` | canvas or fps off contract, total duration outside the envelope, scene count out of range, sub-second scene, duplicate `scene_id`, rendered length drifting from authored |
+Listed in the order `colophon qa` runs them. Rows 1–3 and 12 need nothing but
+the spec, so they can gate a run before any render time is spent; the rest need
+an emitted project or a rendered video.
+
+| # | Gate | Catches | Needs |
+|---|---|---|---|
+| 1 | `spec_validate` | unknown enum values, missing required fields, malformed structure | spec |
+| 2 | `timeline_continuity` | gaps, undeclared overlaps, scenes off the clock | spec |
+| 3 | `narrative_order` | a `cta` in the opening beat, roles out of sequence (advisory) | spec |
+| 4 | `static_html` | lint on the emitted markup before anything is rendered | project |
+| 5 | `canvas_audit` | wrong background, stray `background-image`, invisible text | project |
+| 6 | `scene_structure` | a scene scheduled on the clock that draws nothing, or a missing asset | project |
+| 7 | `claim_grounding` | every on-screen claim traces back to a supplied source | project |
+| 8 | `ai_slop_detector` | cream+orange palette, sparkle glyph in copy, neon glow / ticker bar / tracked-out heading in CSS | project |
+| 9 | `color_consistency` | emitted `--accent` matches the brand token (no off-brand hue) | project |
+| 10 | `centerpiece_invariant` | exactly one motion target per scene; `thinking-pulse` requires one | project |
+| 11 | `motion_accessibility` | missing `prefers-reduced-motion`, or motion fast enough to read as flicker (WCAG 2.3.1 / 2.3.3) | project |
+| 12 | `delivery_contract` | canvas or fps off contract, total duration outside the envelope, scene count out of range, sub-second scene, duplicate `scene_id`, rendered length drifting from the timeline | spec, enhanced by render |
+| 13 | `motion_pixel_velocity` | motion slower than ~1px/frame stutters (no sub-pixel render); also word-sweep stagger below 2 frames | project |
+| 14 | `media_contract` | the file on disk matches what the spec promised: resolution, fps, duration | video |
+
+For a plain-English walkthrough of all of this, see
+[docs/understand.md](docs/understand.md).
 
 This is the load-bearing wall. Visual QA by vision model is close to a coin
 flip on boundary defects (UI-Lens, CVPR 2026: F1 11–42), so a model may
@@ -219,12 +230,15 @@ colophon/
   assets/        brand kit and asset registry
   renderers/
     hyperframes/ the default renderer (HTML/CSS → MP4)
-  qa/            the thirteen gates
+  qa/            the fourteen gates and the failure-code registry
   review/        frame extraction and contact sheets
   repair/        targeted, localized spec edits
+  harness/       the repair loop and the render driver
+  bench/         harness comparison; real agents behind an opt-in gate
   runs/          run lifecycle and manifest
 docs/
   architecture.md        system design
+  understand.md          plain-English walkthrough — start here
   video-spec.md          the spec contract
   roadmap.md             the gated plan and its decision rules
   adr/                   eight architecture decision records
