@@ -25,11 +25,15 @@ from typing import Any
 
 from .presentation.normalize import normalize
 from .qa import runner as qa_runner
+from .qa import eval_protocol as eval_protocol
 from .qa.runner import format_report
 from .qa.stages import grounding as grounding_stage
 from .qa.stages import media as media_stage
 from .qa.stages import spec as spec_stage
 from .qa.stages import static as static_stage
+from .qa.stages import taste as taste_stage
+from .qa.stages import delivery as delivery_stage
+from .qa.stages import motion_velocity as motion_velocity_stage
 from .renderers.base import get_adapter
 from .review import extract as review_extract
 from .runs import layout as run_layout
@@ -247,6 +251,12 @@ def cmd_qa(args: argparse.Namespace) -> int:
             static_stage.static_html,
             static_stage.canvas_audit,
             grounding_stage.claim_grounding,
+            taste_stage.ai_slop_detector,
+            taste_stage.color_consistency,
+            taste_stage.centerpiece_invariant,
+            taste_stage.motion_accessibility,
+            delivery_stage.delivery_contract,
+            motion_velocity_stage.motion_pixel_velocity,
             media_stage.media_contract,
         ],
         {
@@ -259,7 +269,9 @@ def cmd_qa(args: argparse.Namespace) -> int:
         spec_sha256=spec_sha256(spec),
     )
     print(format_report(result))
-    write_json(result.to_dict(), attempt.qa / "qa-report.json")
+    fp = eval_protocol.compute_eval_fingerprint()
+    print(eval_protocol.format_eval_fingerprint(fp))
+    write_json({"eval_fingerprint": fp, **result.to_dict()}, attempt.qa / "qa-report.json")
     return 0 if result.passed else 1
 
 
@@ -360,6 +372,12 @@ def cmd_deliver(args: argparse.Namespace) -> int:
             static_stage.static_html,
             static_stage.canvas_audit,
             grounding_stage.claim_grounding,
+            taste_stage.ai_slop_detector,
+            taste_stage.color_consistency,
+            taste_stage.centerpiece_invariant,
+            taste_stage.motion_accessibility,
+            delivery_stage.delivery_contract,
+            motion_velocity_stage.motion_pixel_velocity,
             media_stage.media_contract,
         ],
         {
@@ -368,11 +386,18 @@ def cmd_deliver(args: argparse.Namespace) -> int:
             "document": document,
             "scene_fragments": emit_result.scene_fragments,
             "video_path": render_result.video_path,
+            # Only cmd_deliver knows this: QA runs after the encode, so the
+            # delivery gate can compare the measured artifact against the
+            # timeline instead of guessing from the spec. cmd_qa has no
+            # artifact and deliberately leaves it out.
+            "rendered_duration_s": render_result.duration_s,
         },
         spec_sha256=digest,
     )
     print(format_report(result))
-    write_json(result.to_dict(), attempt.qa / "qa-report.json")
+    fp = eval_protocol.compute_eval_fingerprint()
+    print(eval_protocol.format_eval_fingerprint(fp))
+    write_json({"eval_fingerprint": fp, **result.to_dict()}, attempt.qa / "qa-report.json")
 
     from .spec.hash import scene_hashes as _scene_hashes
 

@@ -48,8 +48,24 @@ OPACITY_FLOOR = 0.85
 ENTER_MS = 400
 
 #: Per-word stagger and travel for the word-sweep motion.
-WORD_STAGGER_MS = 60
+# Stagger is 100ms (3f at 30fps) so consecutive words never fire <2 frames
+# apart — a <2-frame stagger reads as a single jumble, not a cascade.
+# Travel is 16px over WORD_TRAVEL_MS (480ms @30fps = 14.4f -> 1.11px/frame).
+# That clears the per-frame pixel-velocity floor (>=1px/frame); the
+# previous 8px was 0.56px/frame and stuttered (sat still, then jumped).
+WORD_STAGGER_MS = 100
 WORD_TRAVEL_MS = 480
+
+#: The thinking-pulse entrance. This is the one motion that had drifted: it
+#: used to run 1200ms on a single ease-in-out, which is *outside* the closed
+#: duration band the design is built on. blakecrosley.com's Motion Grammar
+#: caps motion at ~300-400ms (page/modal band) and the whole project's thesis
+#: is "the deletion test outranks the taste test" — a 1200ms pulse is exactly
+#: the noise that test is meant to delete. We pin it to 400ms and give it real
+#: weight (an anticipatory dip + overshoot) instead of raw scale, so it reads
+#: as Mass & Weight rather than a cheap throb. PULSE_MS is substituted into the
+#: stylesheet the same way OPACITY_FLOOR is.
+PULSE_MS = 400
 
 
 def _entrance_ms(spec: VideoSpec) -> int:
@@ -178,11 +194,12 @@ h1{
   animation-timing-function:cubic-bezier(.2,.75,.34,.94);
 }
 @keyframes word-sweep-in{
-  from{transform:translateY(8px)}
+  from{transform:translateY(16px)}
   to{transform:none}
 }
-/* thinking-pulse motion: the scene's single centerpiece pulses twice (scale
-   only), suggesting "the agent is initializing / the number is being decided".
+/* thinking-pulse motion: the scene's single centerpiece does ONE weighted
+   pulse (scale only), suggesting "the agent is initializing / the number is
+   being decided".
 
    The target is [data-centerpiece], which the RENDERER stamps on exactly one
    element per scene. It is not a CSS selector guess like ".figure, .glyph,
@@ -192,20 +209,41 @@ h1{
 
    Same opacity-omitted constraint as word-sweep: the parent .clip-motion
    fade-rise already animates opacity, and stacking fractional opacities
-   drops the subtree. */
+   drops the subtree.
+
+   The old pulse ran 1200ms on a single ease-in-out. That is outside the
+   closed duration band the design is built on (blakecrosley.com caps motion
+   at ~300-400ms) and carried no Mass & Weight — which is exactly why it
+   reads as "cheap". The replacement stays inside the band (PULSE_MS = 400)
+   and earns its weight from the curve, not the duration:
+     0%   Anticipation — a slight wind-up dip (ease-in)
+     30%  Strike        — overshoot past rest (ease-out)
+     62%  Settle        — fall back below rest (ease-in)
+     100% Rest
+   Per-keyframe easing means the entrance and exit are distinct, the way a
+   real object would speed into and ease out of an emphasize. */
 .m-thinking-pulse [data-centerpiece]{
   animation-name:thinking-pulse-in;
   animation-fill-mode:both;
-  animation-duration:1200ms;
+  animation-duration:PULSE_MSms;
   animation-timing-function:ease-in-out;
   transform-origin:center;
   display:inline-block;
 }
 @keyframes thinking-pulse-in{
-  0%   {transform:scale(.94)}
-  35%  {transform:scale(1.05)}
-  65%  {transform:scale(.97)}
+  0%   {transform:scale(.92);animation-timing-function:cubic-bezier(.4,0,.7,1)}
+  30%  {transform:scale(1.06);animation-timing-function:cubic-bezier(.22,.61,.36,1)}
+  62%  {transform:scale(.97);animation-timing-function:cubic-bezier(.4,0,.6,1)}
   100% {transform:none}
+}
+/* Accessibility: honour the user's OS reduced-motion preference. Every motion
+   in colophon is decorative emphasis on an otherwise static layout, so it can
+   be removed without losing information. This is the concrete accessibility
+   gate the Motion Grammar essay calls a first-class requirement. */
+@media (prefers-reduced-motion: reduce){
+  .clip-motion{animation-name:none}
+  .m-word-sweep .word{animation:none}
+  .m-thinking-pulse [data-centerpiece]{animation:none}
 }
 p{margin:0;font-family:SANS;color:var(--muted);font-size:30px;line-height:1.45}
 .eyebrow{
@@ -356,7 +394,7 @@ def _centerpiece_mark(start_ms: int) -> str:
 
     Motions are CSS animations on descendants, and a CSS ``animation-delay``
     is measured from when the element is rendered -- not from when its scene
-    starts. Without the offset, thinking-pulse plays its full 1200ms at page
+    starts. Without the offset, thinking-pulse plays its full PULSE_MS at page
     load and is long finished before a scene starting at 5s is ever on
     screen. The motion grammar only ever worked on scene 1 because scene 1
     starts at 0, where the two coincide.
@@ -412,7 +450,9 @@ def _word_sweep_spans(
     subtree.
 
     The whole-sweep total is (n_words - 1) * per_word_ms + duration_ms.
-    For 7 words at the defaults: 360 + 480 = 840 ms.
+    For 7 words at the defaults: 600 + 480 = 1080 ms. Travel is 16px over
+    WORD_TRAVEL_MS, which clears the 1px/frame pixel-velocity floor at the
+    project default of 30fps.
     """
     words = (text or "").split()
     out: list[str] = []
@@ -585,7 +625,9 @@ def _body(scene: Scene, spec: VideoSpec, start_ms: int = 0) -> str:
 
 def _stylesheet(spec: VideoSpec) -> str:
     brand_css = to_css(spec.brand) if spec.brand else ":root{--bg:#0B0B0D;--fg:#F5F5F7}"
-    base = _BASE_CSS.replace("OPACITY_FLOOR", str(OPACITY_FLOOR))
+    base = _BASE_CSS.replace("OPACITY_FLOOR", str(OPACITY_FLOOR)).replace(
+        "PULSE_MS", str(PULSE_MS)
+    )
 
     used = {s.treatment for s in spec.scenes}
     blocks = "".join(_TREATMENT_CSS.get(t, "") for t in sorted(used))

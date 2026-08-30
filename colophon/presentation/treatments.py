@@ -285,11 +285,14 @@ _MOTION_TABLE: tuple[Motion, ...] = (
     ),
     Motion(
         "thinking-pulse",
-        "The scene's centerpiece (.figure, .glyph, or h1) pulses twice — "
-        "scale 0.94 -> 1.05 -> 0.97 -> 1.00 — over 1200ms, then settles. "
-        "Transform only (no opacity) for the same subtree-drop reason as "
-        "word-sweep. Used for 'agent is initializing' beats, single-stat "
-        "emphases, and quote-glyph reveals.",
+        "The scene's single centerpiece ([data-centerpiece]: .figure, .glyph, "
+        "or h1) does one weighted pulse over 400ms — Anticipation (a slight "
+        "wind-up dip to .92), Strike (overshoot to 1.06), Settle (.97) to "
+        "Rest. The 400ms total sits inside the Motion Grammar closed band "
+        "(page/modal ~300-400ms); the weight comes from the dip and overshoot, "
+        "not from scale or duration, and it is transform-only (no opacity) for "
+        "the subtree-drop reason shared with word-sweep. Used for 'agent is "
+        "initializing' beats, single-stat emphases, and quote-glyph reveals.",
     ),
 )
 

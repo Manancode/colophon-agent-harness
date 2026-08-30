@@ -2,7 +2,7 @@
 
 **Spec-first video generation with machine-checkable taste.**
 
-A closed motion grammar, seven deterministic QA gates, and a reproducible
+A closed motion grammar, thirteen deterministic QA gates, and a reproducible
 fingerprint for every render — so that what a viewer *feels* is the only thing
 left to argue about.
 
@@ -15,7 +15,7 @@ brief + brand + assets  →  agent  →  canonical spec   ← the source of trut
                                           ↓
                                        render         ← HyperFrames → MP4
                                           ↓
-                                  deterministic QA   ← 7 gates, no model calls
+                                  deterministic QA   ← 13 gates, no model calls
                                           ↓
                                 independent review   ← contact sheet for a human
                                           ↓
@@ -79,7 +79,7 @@ The full command surface:
 | `validate` | validate spec and timeline |
 | `emit` | spec → editable HTML/CSS project |
 | `render` | project → MP4 |
-| `qa` | run the seven deterministic gates |
+| `qa` | run the thirteen deterministic gates |
 | `review` | extract frames and build a contact sheet |
 | `repair` | apply targeted spec repairs |
 | `deliver` | run the whole pipeline end to end |
@@ -134,7 +134,7 @@ decision with a rationale, not a convenience.
 
 ---
 
-## The seven gates
+## The thirteen gates
 
 Every gate is deterministic. **No stage calls a model.** Stages are
 order-independent, so any single one can be re-run alone.
@@ -148,6 +148,12 @@ order-independent, so any single one can be re-run alone.
 | 5 | `canvas_audit` | wrong background, stray `background-image`, invisible text |
 | 6 | `media_contract` | the file on disk matches what the spec promised |
 | 7 | `claim_grounding` | every on-screen claim traces back to a supplied source |
+| 8 | `ai_slop_detector` | cream+orange palette, sparkle glyph in copy, neon glow / ticker bar / tracked-out heading in CSS |
+| 9 | `color_consistency` | emitted `--accent` matches the brand token (no off-brand hue) |
+| 10 | `centerpiece_invariant` | exactly one motion target per scene; `thinking-pulse` requires one |
+| 11 | `motion_accessibility` | missing `prefers-reduced-motion`, or motion fast enough to read as flicker (WCAG 2.3.1 / 2.3.3) |
+| 12 | `motion_pixel_velocity` | motion slower than ~1px/frame stutters (no sub-pixel render); also word-sweep stagger below 2 frames |
+| 13 | `delivery_contract` | canvas or fps off contract, total duration outside the envelope, scene count out of range, sub-second scene, duplicate `scene_id`, rendered length drifting from authored |
 
 This is the load-bearing wall. Visual QA by vision model is close to a coin
 flip on boundary defects (UI-Lens, CVPR 2026: F1 11–42), so a model may
@@ -184,7 +190,7 @@ colophon/
   assets/        brand kit and asset registry
   renderers/
     hyperframes/ the default renderer (HTML/CSS → MP4)
-  qa/            the seven gates
+  qa/            the thirteen gates
   review/        frame extraction and contact sheets
   repair/        targeted, localized spec edits
   runs/          run lifecycle and manifest
