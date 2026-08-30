@@ -50,3 +50,46 @@ def test_stagger_below_two_frames_fails():
 def test_no_document_is_advisory():
     res = motion_pixel_velocity(_SPEC, document=None)
     assert res.passed and res.advisory
+
+
+def _solo_doc(body: str, duration_ms: int = 480) -> str:
+    """One keyframes block, one animation-name rule that names it."""
+    return f"""
+    <!doctype html><html><head><style>
+    @keyframes mv-in{{{body}}}
+    .thing{{animation-name:mv-in;animation-duration:{duration_ms}ms}}
+    </style></head><body><div class="thing">x</div></body></html>
+    """
+
+
+def test_travel_in_a_later_step_is_measured():
+    """The bug this replaces: only the first step was ever read.
+
+    `@keyframes name {(.*?)}` stops at the close of the *first* step, so this
+    motion measured 0px and was reported as a stutter despite travelling 30px
+    over 480ms (1.9px/frame). The gate got away with it for as long as it did
+    only because colophon's emitter puts the travel in the `from` step.
+    """
+    doc = _solo_doc("0%{transform:translateY(0)}100%{transform:translateY(30px)}")
+    res = motion_pixel_velocity(_SPEC, document=doc)
+    assert res.passed, res.problems
+
+
+def test_travel_split_across_steps_is_still_a_stutter():
+    """The same shape, moving too little: must still be caught."""
+    doc = _solo_doc("0%{transform:translateY(0)}100%{transform:translateY(4px)}")
+    res = motion_pixel_velocity(_SPEC, document=doc)
+    assert not res.passed
+    assert any("mv-in" in p and "px/frame" in p for p in res.problems)
+
+
+def test_a_multi_step_block_is_not_truncated_early():
+    """A later step that also moves must contribute, not be cut off."""
+    doc = _solo_doc(
+        "0%{transform:translateY(0)}"
+        "50%{transform:translateY(40px)}"
+        "100%{transform:translateY(0)}",
+        duration_ms=480,
+    )
+    res = motion_pixel_velocity(_SPEC, document=doc)
+    assert res.passed, res.problems

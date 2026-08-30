@@ -10,16 +10,47 @@ spec is only joined back in when the verdict is recorded.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable, NamedTuple, Sequence
 
 from ..runtime import tools
 from ..runtime.tools import ToolError, run
 
+_SIGNALSTATS_RE = re.compile(r"(Y(?:MIN|LOW|AVG|HIGH|MAX))=([0-9.]+)")
+
 
 class ReviewError(RuntimeError):
     pass
+
+
+class LumaStats(NamedTuple):
+    """Luma of one frame: its darkest, average and brightest pixel.
+
+    All three are on ffmpeg's ``signalstats`` scale. Our encodes are
+    ``yuv420p``/``color_range=tv``, so 8-bit sRGB 0-255 maps to 16-235:
+    a bare #0B0B12 canvas reads 26, white text reads 235. Readings are
+    therefore *not* directly comparable to a 0-255 luma formula.
+    """
+
+    ymin: float | None
+    yavg: float | None
+    ymax: float | None
+
+    @property
+    def spread(self) -> float | None:
+        """YMAX - YMIN: how far the frame departs from a flat field.
+
+        The blank-frame statistic, and the only one of the three that works
+        regardless of whether the design is dark-on-light or light-on-dark.
+        Average luma barely moves when a dark scene gains a headline (~1.6
+        units, measured), and peak luma never moves at all when the content
+        is *darker* than its background. Spread moves in both directions.
+        """
+        if self.ymin is None or self.ymax is None:
+            return None
+        return self.ymax - self.ymin
 
 
 @dataclass
@@ -142,15 +173,17 @@ def build_contact_sheet(
     return out_path
 
 
-def luminance_at(video: str | Path, timestamps: Sequence[float]) -> list[float | None]:
-    """Average luma at each timestamp.
+def luma_stats_at(video: str | Path, timestamps: Sequence[float]) -> list[LumaStats]:
+    """Luma (min/average/max) of the frame at each timestamp.
 
-    A bare canvas has a characteristic luma; a frame at or below it is blank.
-    Checking every scene boundary this way is how we caught — and then
-    regression-tested — the blank-frame defect at scene transitions.
+    A frame showing only its background is flat: its darkest and brightest
+    pixels are the same pixel, so the spread is 0 regardless of what colour
+    that background is. A frame with content on it is not. Checking scene
+    midpoints this way is how we caught — and then regression-tested — the
+    blank-frame defect at scene transitions.
     """
     ffmpeg = tools.resolve("ffmpeg")
-    readings: list[float | None] = []
+    readings: list[LumaStats] = []
     for t in timestamps:
         code, stdout, stderr = run(
             [
@@ -163,19 +196,28 @@ def luminance_at(video: str | Path, timestamps: Sequence[float]) -> list[float |
             ],
             timeout=300,
         )
-        value: float | None = None
         # `metadata=print:file=-` writes to STDOUT, not stderr. Reading only
         # stderr made every luma reading report n/a, which silently disabled
         # the blank-frame check that exists to catch empty scenes.
-        for line in ((stdout or "") + "\n" + (stderr or "")).splitlines():
-            if "YAVG" in line:
-                try:
-                    value = float(line.split("=")[-1].strip())
-                except ValueError:
-                    value = None
-                break
-        readings.append(value)
+        found: dict[str, float] = {}
+        for name, raw in _SIGNALSTATS_RE.findall((stdout or "") + "\n" + (stderr or "")):
+            try:
+                found.setdefault(name, float(raw))
+            except ValueError:
+                pass
+        readings.append(
+            LumaStats(found.get("YMIN"), found.get("YAVG"), found.get("YMAX"))
+        )
     return readings
+
+
+def luminance_at(video: str | Path, timestamps: Sequence[float]) -> list[float | None]:
+    """Average luma at each timestamp, for logging.
+
+    Kept because the CLI prints it, but prefer :func:`luma_stats_at` for any
+    decision: the average is nearly blind to content on a dark design.
+    """
+    return [stats.yavg for stats in luma_stats_at(video, timestamps)]
 
 
 def write_manifest(frameset: FrameSet, path: str | Path) -> Path:

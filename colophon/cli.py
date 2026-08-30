@@ -32,6 +32,7 @@ from .qa.stages import grounding as grounding_stage
 from .qa.stages import media as media_stage
 from .qa.stages import spec as spec_stage
 from .qa.stages import static as static_stage
+from .qa.stages import structure as structure_stage
 from .qa.stages import taste as taste_stage
 from .qa.stages import delivery as delivery_stage
 from .qa.stages import motion_velocity as motion_velocity_stage
@@ -251,6 +252,7 @@ def cmd_qa(args: argparse.Namespace) -> int:
             spec_stage.narrative_order,
             static_stage.static_html,
             static_stage.canvas_audit,
+            structure_stage.scene_structure,
             grounding_stage.claim_grounding,
             taste_stage.ai_slop_detector,
             taste_stage.color_consistency,
@@ -266,6 +268,9 @@ def cmd_qa(args: argparse.Namespace) -> int:
             "document": document,
             "scene_fragments": emit_info.get("scene_fragments"),
             "video_path": video if video.is_file() else None,
+            # Only the missing-asset check needs this; the rest of the gate
+            # runs fine before a render.
+            "project_dir": attempt.project,
         },
         spec_sha256=spec_sha256(spec),
     )
@@ -381,6 +386,7 @@ def cmd_deliver(args: argparse.Namespace) -> int:
             spec_stage.narrative_order,
             static_stage.static_html,
             static_stage.canvas_audit,
+            structure_stage.scene_structure,
             grounding_stage.claim_grounding,
             taste_stage.ai_slop_detector,
             taste_stage.color_consistency,
@@ -396,6 +402,7 @@ def cmd_deliver(args: argparse.Namespace) -> int:
             "document": document,
             "scene_fragments": emit_result.scene_fragments,
             "video_path": render_result.video_path,
+            "project_dir": attempt.project,
             # Only cmd_deliver knows this: QA runs after the encode, so the
             # delivery gate can compare the measured artifact against the
             # timeline instead of guessing from the spec. cmd_qa has no

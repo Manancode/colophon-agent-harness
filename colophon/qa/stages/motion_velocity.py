@@ -22,6 +22,7 @@ import re
 from typing import Any
 
 from ...spec.schema import VideoSpec
+from ..css import keyframes_blocks
 from ..runner import StageResult
 
 #: Per-frame pixel-velocity floor, in pixels per frame.
@@ -29,7 +30,6 @@ FLOOR_PX_PER_FRAME = 1.0
 #: Minimum word-sweep stagger, in frames, so words don't blur together.
 MIN_STAGGER_FRAMES = 2
 
-_KEYFRAME_RE = re.compile(r"@keyframes\s+([\w-]+)\s*\{(.*?)\}", re.S)
 _TRANSLATEY_RE = re.compile(r"translateY\(([-0-9.]+)px\)")
 _WORD_SPAN_RE = re.compile(r'class="word"[^>]*?animation-(?:delay|duration)\s*:\s*(\d+)ms')
 _WORD_DELAY_RE = re.compile(r'class="word"[^>]*?animation-delay\s*:\s*(\d+)ms')
@@ -88,9 +88,19 @@ def motion_pixel_velocity(
     problems: list[str] = []
     detail: dict[str, Any] = {}
 
-    for km in _KEYFRAME_RE.finditer(document):
-        name, body = km.group(1), km.group(2)
-        dists = [abs(float(x)) for x in _TRANSLATEY_RE.findall(body)]
+    for block in keyframes_blocks(document):
+        name = block.name
+        # Travel is summed across every step, not read off the first one. The
+        # regex this used (`@keyframes name {(.*?)}`) stopped at the close of
+        # the first step, so a motion whose travel sits in a later step
+        # measured 0px and was reported as a stutter no matter how far it
+        # actually moved. colophon's own emitter happens to put the travel in
+        # the `from` step, which is the only reason this ever looked correct.
+        dists = [
+            abs(float(x))
+            for _, decls in block.steps
+            for x in _TRANSLATEY_RE.findall(decls)
+        ]
         if not dists:
             continue
         max_dist = max(dists)

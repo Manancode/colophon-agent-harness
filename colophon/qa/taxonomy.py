@@ -100,6 +100,7 @@ STAGES: dict[str, StagePolicy] = {
         ),
         StagePolicy("static_html", "The emitted document is inert and self-contained."),
         StagePolicy("canvas_audit", "The stage matches the declared canvas."),
+        StagePolicy("scene_structure", "Scenes on the clock actually draw something."),
         StagePolicy("claim_grounding", "Every claim on screen is a bound claim."),
         StagePolicy("ai_slop_detector", "No generated-design tells in the CSS."),
         StagePolicy("color_consistency", "The emitted accent equals the brand accent."),
@@ -289,6 +290,34 @@ FAILURE_MODES: dict[str, FailureMode] = {
               "the encoded length drifts from the timeline",
               "The encoder dropped or padded frames. Re-render; if it persists, "
               "the timeline and the encoder disagree about frame count."),
+        # ---- scene_structure ------------------------------------------
+        # The six ways something can be scheduled on the clock and still draw
+        # nothing. Cheap, stupid failures -- and invisible to every gate that
+        # inspects the *properties* of content, because content that is not
+        # there has no properties to get wrong.
+        _mode("structure.zero_duration", "scene_structure", Severity.BLOCKER,
+              "a scene is scheduled for zero frames",
+              "Lengthen it past one frame. A zero-length scene is validated by "
+              "every gate and seen by nobody."),
+        _mode("structure.no_visuals", "scene_structure", Severity.BLOCKER,
+              "a scene has no text and no media",
+              "Give the scene content, or remove it from the timeline."),
+        _mode("structure.never_visible", "scene_structure", Severity.BLOCKER,
+              "a motion is applied but the element it animates was never emitted",
+              "Pick a motion the treatment's markup can carry. A motion with no "
+              "target renders as a no-op that looks finished."),
+        _mode("structure.transparent", "scene_structure", Severity.BLOCKER,
+              "an entrance ends fully transparent",
+              "End the keyframes at the content's resting opacity. Fading to 0 "
+              "leaves the scene blank for the rest of its window."),
+        _mode("structure.source_error", "scene_structure", Severity.BLOCKER,
+              "the document references an asset that is not on disk",
+              "Add the file, or drop the reference. A missing asset renders as "
+              "nothing rather than erroring."),
+        _mode("structure.black_frame", "scene_structure", Severity.BLOCKER,
+              "a scene encodes as a flat frame -- no pixel departs from the background",
+              "The scene drew nothing: its frame is uniform. Check that its "
+              "content is inside the clip, and that no motion left it invisible."),
     )
 }
 
