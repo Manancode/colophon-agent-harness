@@ -1,13 +1,10 @@
 """Harness matrix: compare colophon's deterministic judge against other harnesses.
 
-This benchmarks 8 external coding agents to *prove* its own harness wins.
-Same shape:
+The shape is the same one the other repos use: run the SAME briefs through
+several harnesses, collect a matrix of pass/fail plus which gates fired, and
+let the matrix argue about which harness is actually better.
 
-    run the SAME briefs through several harnesses
-      -> a matrix of pass/fail + which gates fired
-      -> a verdict on which harness is actually better.
-
-colophon's own 12 deterministic gates are one harness (``colophon``). A naive
+colophon's own 14 deterministic gates are one harness (``colophon``). A naive
 "raw agent" baseline (``naive``) is the contrast: it only checks that *something*
 was produced, the way an unchecked LLM agent would. Plug real codex / claude /
 deepseek harnesses in by implementing the same ``Harness`` callable (see
@@ -29,6 +26,7 @@ from ..qa.runner import run_stages
 from ..qa.stages import motion_velocity as motion_velocity_stage
 from ..qa.stages import static as static_stage
 from ..qa.stages import taste as taste_stage
+from ..runtime.tools import effective_path
 from ..spec.schema import VideoSpec
 
 #: The artifact-level gates — they measure an emitted document without needing
@@ -126,31 +124,64 @@ naive_harness.name = "naive"
 class ExternalAgentHarness:
     """Stand-in for a real coding agent (codex/claude/deepseek).
 
-    When the binary is available, ``run`` would shell out to it with the brief
-    and then run colophon's gates on what it produced. Until those binaries are
-    configured, the row reports ``skipped`` rather than faking a result — the
-    matrix never lies about a harness it did not actually run.
+    A row is only ever ``SKIP`` or a real measurement — never a faked result.
+    There are two ways to skip, and both say which one it is:
+
+    * the binary is not installed on this machine;
+    * the binary is installed but the invocation is not wired yet.
+
+    Neither raises. A benchmark that hard-crashes because a third-party CLI
+    happens to be installed on someone's laptop is worse than the gap it is
+    trying to measure — it takes every other row down with it.
     """
 
     def __init__(self, name: str, binary: str) -> None:
         self.name = name
         self.binary = binary
 
+    def _locate(self) -> str | None:
+        """Resolve the binary through colophon's effective PATH.
+
+        Not the ambient ``PATH``: that varies with how stripped the sandbox is,
+        so the same machine would report "not found" from one shell and
+        "installed" from another. ``effective_path`` restores the usual
+        Homebrew/local prefixes, making discovery reproducible.
+        """
+        return shutil.which(self.binary, path=effective_path())
+
+    def _invoke(self, brief: str) -> str:
+        """Run the agent on ``brief``; return the document it emitted.
+
+        Integration point: shell out to ``self.binary``, capture its document,
+        then hand that to ``colophon_harness``. Deliberately unwired — but
+        nothing on the live path calls it, so an unwired harness skips
+        honestly instead of exploding.
+        """
+        raise NotImplementedError(
+            f"{self.name}: run {self.binary} on the brief and return its document"
+        )
+
     def __call__(
         self, document: str, *, spec: VideoSpec | None = None, brief: str = "", **_: Any
     ) -> HarnessResult:
-        if shutil.which(self.binary) is None:
+        found = self._locate()
+        if found is None:
             return HarnessResult(
                 harness=self.name,
                 brief=brief,
                 passed=False,
                 skipped=True,
-                detail=f"binary {self.binary!r} not found; configure to enable",
+                detail=f"binary {self.binary!r} not found; install it to enable this row",
             )
-        # Integration point: invoke `self.binary` on `brief`, capture its
-        # emitted document, then call colophon_harness on that document.
-        raise NotImplementedError(
-            f"{self.name}: wire the {self.binary} invocation + colophon_harness here"
+        return HarnessResult(
+            harness=self.name,
+            brief=brief,
+            passed=False,
+            skipped=True,
+            detail=(
+                f"{self.name}: found {found}, but the invocation is not wired "
+                f"yet; implement ExternalAgentHarness._invoke to enable this row"
+            ),
         )
 
 
