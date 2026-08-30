@@ -6,17 +6,18 @@ from typing import Any
 
 from ...presentation.roles import check_narrative_order
 from ...spec.schema import VideoSpec
-from ...spec.validate import validate
+from ...spec.validate import validate_coded
 from ...timeline.plan import TimelinePlan, check_continuity
 from ..runner import StageResult
 
 
 def spec_validate(spec: VideoSpec, **_: Any) -> StageResult:
-    problems = validate(spec)
+    coded = validate_coded(spec)
     return StageResult(
         stage_id="spec_validate",
-        passed=not problems,
-        problems=problems,
+        passed=not coded,
+        problems=[message for _, message in coded],
+        codes=[code for code, _ in coded],
         detail={"scene_count": len(spec.scenes), "claim_count": len(spec.claims)},
     )
 

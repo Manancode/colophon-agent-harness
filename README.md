@@ -161,6 +161,35 @@ comment on taste but **never alone triggers a repair**.
 
 ---
 
+## What a failure means
+
+A gate reporting a problem is not the same as a run being unshippable, and
+the difference is not inferred from the message text — it is looked up in a
+closed registry (`colophon/qa/taxonomy.py`). Every run ends in one of three
+states:
+
+| State | Meaning |
+| --- | --- |
+| `ready` | Nothing to report. |
+| `ready_with_warnings` | Only diagnostics: worth a reviewer's attention, still ships. |
+| `blocked` | At least one blocker, **or** something the registry does not recognise. |
+
+The last clause is the point. A system that classifies problems by matching
+their text gets *more* permissive exactly when it is confused: a new kind of
+problem matches no rule, is filed as "unknown but presumably minor", and
+ships. Inverting the default fixes it. An unrecognised problem is not
+evidence that a thing is safe — it is evidence that we do not know what it
+is — so it blocks. Adding a code to the registry is a deliberate act that
+says "I looked at this and it is cosmetic"; forgetting one costs you a
+blocked run, which you notice immediately, rather than a shipped defect,
+which you notice in production.
+
+Coverage is therefore allowed to be partial. Gates opt into emitting codes;
+until one does, its problems fall back to the severity registered for that
+stage. `spec_validate` names all of its failures; the rest are being taught.
+
+---
+
 ## Determinism and provenance
 
 Every run produces four artifacts, and the last is why the first three are

@@ -22,6 +22,17 @@ class StageResult:
     problems: list[str] = field(default_factory=list)
     advisory: bool = False
     detail: dict[str, Any] = field(default_factory=dict)
+    #: Taxonomy code per problem, positionally parallel to ``problems``. Empty
+    #: means the stage has not been taught to name its failures yet, and the
+    #: taxonomy falls back to this stage's default severity. Shorter than
+    #: ``problems`` is tolerated; the tail is simply unclassified.
+    #:
+    #: Why optional rather than required: making it mandatory would mean no
+    #: stage reports a code until all of them do, and the taxonomy's whole
+    #: value is that un-named problems block instead of passing. Partial
+    #: adoption is therefore safe by construction, and this field can be
+    #: filled in one gate at a time.
+    codes: list[str | None] = field(default_factory=list)
 
     @property
     def blocking(self) -> bool:
@@ -34,6 +45,7 @@ class StageResult:
             "advisory": self.advisory,
             "problems": list(self.problems),
             "detail": self.detail,
+            "codes": list(self.codes),
         }
 
     def __str__(self) -> str:

@@ -17,7 +17,7 @@ Two responsibilities, kept deliberately separate:
 from __future__ import annotations
 
 import re
-from typing import Any, Iterable, Mapping
+from typing import Any, Iterable, Mapping, Optional
 
 from .schema import (
     ROLES,
@@ -34,6 +34,12 @@ from ..presentation.treatments import MOTIONS, TREATMENTS, supported_motions
 
 _ID_RE = re.compile(r"[A-Za-z][A-Za-z0-9_-]{0,127}")
 _ALLOWED_FPS = frozenset({24, 25, 30, 48, 50, 60})
+
+#: A problem paired with the taxonomy code that classifies it. ``None`` means
+#: "not named yet", which the taxonomy treats as a blocker.
+#: Spelled with Optional rather than ``str | None`` because this is a runtime
+#: expression, and PEP 604 unions only work in annotations before 3.10.
+Coded = tuple[Optional[str], str]
 _REMOTE = ("http://", "https://", "//", "ftp://", "data:")
 
 _TOP_KEYS = frozenset(
@@ -115,12 +121,23 @@ def validate(spec: VideoSpec) -> list[str]:
     Returning problems rather than raising on the first one keeps the QA report
     useful: an author fixing a spec wants every issue at once.
     """
-    problems: list[str] = []
+    return [message for _, message in validate_coded(spec)]
+
+
+def validate_coded(spec: VideoSpec) -> list[Coded]:
+    """``validate``, but each problem carries its taxonomy code.
+
+    The code is declared here, next to the check that produces it, rather
+    than recovered downstream by matching on the message text. A code defined
+    far from its check drifts the moment someone rewords the message, and a
+    silently-orphaned code blocks every run it touches.
+    """
+    problems: list[Coded] = []
 
     if not spec.spec_id.strip():
-        problems.append("spec_id is empty")
+        problems.append(("spec.id.empty", "spec_id is empty"))
     if not spec.scenes:
-        problems.append("spec has no scenes")
+        problems.append(("spec.scenes.empty", "spec has no scenes"))
 
     problems.extend(_validate_canvas(spec.canvas))
     problems.extend(_validate_brand(spec.brand))
@@ -138,86 +155,120 @@ def assert_valid(spec: VideoSpec) -> None:
         raise SpecError("invalid spec:\n  - " + "\n  - ".join(problems))
 
 
-def _validate_canvas(c: Canvas) -> list[str]:
-    out = []
+def _validate_canvas(c: Canvas) -> list[Coded]:
+    out: list[Coded] = []
     if c.width <= 0 or c.height <= 0:
-        out.append(f"canvas dimensions must be positive, got {c.width}x{c.height}")
+        out.append((
+            "spec.canvas.dimensions",
+            f"canvas dimensions must be positive, got {c.width}x{c.height}",
+        ))
     if c.fps not in _ALLOWED_FPS:
-        out.append(f"canvas.fps {c.fps} not in {sorted(_ALLOWED_FPS)}")
+        out.append((
+            "spec.canvas.fps",
+            f"canvas.fps {c.fps} not in {sorted(_ALLOWED_FPS)}",
+        ))
     return out
 
 
-def _validate_brand(b: Brand | None) -> list[str]:
+def _validate_brand(b: Brand | None) -> list[Coded]:
     if b is None:
-        return ["brand is missing"]
-    out = []
+        return [("spec.brand.missing", "brand is missing")]
+    out: list[Coded] = []
     if not b.name.strip():
-        out.append("brand.name is empty")
+        out.append(("spec.brand.name", "brand.name is empty"))
     for token in Brand.REQUIRED_TOKENS:
         if token not in b.tokens:
-            out.append(f"brand.tokens missing required token {token!r}")
+            out.append((
+                "spec.brand.token",
+                f"brand.tokens missing required token {token!r}",
+            ))
     return out
 
 
-def _validate_timeline(t: Timeline) -> list[str]:
-    out = []
+def _validate_timeline(t: Timeline) -> list[Coded]:
+    out: list[Coded] = []
     if t.policy not in Timeline.POLICIES:
-        out.append(f"timeline.policy {t.policy!r} not in {list(Timeline.POLICIES)}")
+        out.append((
+            "spec.timeline.policy",
+            f"timeline.policy {t.policy!r} not in {list(Timeline.POLICIES)}",
+        ))
     if t.policy == "explicit":
-        out.append("timeline.policy 'explicit' is not supported in V0")
+        out.append((
+            "spec.timeline.policy",
+            "timeline.policy 'explicit' is not supported in V0",
+        ))
     if t.transition not in Timeline.TRANSITIONS:
-        out.append(f"timeline.transition {t.transition!r} not in {list(Timeline.TRANSITIONS)}")
+        out.append((
+            "spec.timeline.transition",
+            f"timeline.transition {t.transition!r} not in {list(Timeline.TRANSITIONS)}",
+        ))
     if t.transition_ms < 0:
-        out.append("timeline.transition_ms must be >= 0")
+        out.append((
+            "spec.timeline.transition_ms",
+            "timeline.transition_ms must be >= 0",
+        ))
     if t.overlap_s < 0:
-        out.append("timeline.overlap_s must be >= 0")
+        out.append((
+            "spec.timeline.overlap_s",
+            "timeline.overlap_s must be >= 0",
+        ))
     if t.transition == "match_cut" and t.overlap_s <= 0:
         # A match cut joins two scenes *through* the frames they share. With no
         # overlap there is nothing to cross-cut with, so the choice is
         # incoherent rather than merely unusual.
-        out.append(
+        out.append((
+            "spec.timeline.match_cut_needs_overlap",
             "timeline.transition 'match_cut' requires timeline.overlap_s > 0 "
-            "(a match cut needs shared frames to cut across)"
-        )
+            "(a match cut needs shared frames to cut across)",
+        ))
     return out
 
 
-def _validate_assets(assets: tuple[Asset, ...]) -> list[str]:
-    out = []
+def _validate_assets(assets: tuple[Asset, ...]) -> list[Coded]:
+    out: list[Coded] = []
     try:
         _check_ids(assets, "asset_id", "assets")
     except SpecError as exc:
-        out.append(str(exc))
+        out.append(("spec.asset.id_duplicate", str(exc)))
     for a in assets:
         if a.kind not in Asset.KINDS:
-            out.append(f"asset {a.asset_id}: kind {a.kind!r} not in {list(Asset.KINDS)}")
+            out.append((
+                "spec.asset.kind",
+                f"asset {a.asset_id}: kind {a.kind!r} not in {list(Asset.KINDS)}",
+            ))
         if any(a.path.startswith(p) for p in _REMOTE):
-            out.append(f"asset {a.asset_id}: remote assets are not permitted ({a.path})")
+            out.append((
+                "spec.asset.remote",
+                f"asset {a.asset_id}: remote assets are not permitted ({a.path})",
+            ))
         if not a.path.strip():
-            out.append(f"asset {a.asset_id}: path is empty")
+            out.append(("spec.asset.path", f"asset {a.asset_id}: path is empty"))
     return out
 
 
-def _validate_claims(claims: tuple[Claim, ...]) -> list[str]:
-    out = []
+def _validate_claims(claims: tuple[Claim, ...]) -> list[Coded]:
+    out: list[Coded] = []
     try:
         _check_ids(claims, "claim_id", "claims")
     except SpecError as exc:
-        out.append(str(exc))
+        out.append(("spec.claim.id_duplicate", str(exc)))
     for c in claims:
         if c.kind not in Claim.KINDS:
-            out.append(f"claim {c.claim_id}: kind {c.kind!r} not in {list(Claim.KINDS)}")
+            out.append((
+                "spec.claim.kind",
+                f"claim {c.claim_id}: kind {c.kind!r} not in {list(Claim.KINDS)}",
+            ))
         if not c.text.strip():
-            out.append(f"claim {c.claim_id}: text is empty")
+            out.append(("spec.claim.text", f"claim {c.claim_id}: text is empty"))
     return out
 
 
-def _validate_scenes(spec: VideoSpec) -> list[str]:
-    out: list[str] = []
+def _validate_scenes(spec: VideoSpec) -> list[Coded]:
+    out: list[Coded] = []
     try:
         _check_ids(spec.scenes, "scene_id", "scenes")
     except SpecError as exc:
-        out.append(str(exc))
+        out.append(("spec.scene.id_duplicate", str(exc)))
 
     claim_ids = {c.claim_id for c in spec.claims}
     asset_ids = {a.asset_id for a in spec.assets}
@@ -225,13 +276,14 @@ def _validate_scenes(spec: VideoSpec) -> list[str]:
     for s in spec.scenes:
         where = f"scene {s.scene_id}"
         if s.role not in ROLES:
-            out.append(f"{where}: role {s.role!r} not in {list(ROLES)}")
+            out.append(("spec.scene.role", f"{where}: role {s.role!r} not in {list(ROLES)}"))
         if not s.treatment.strip():
-            out.append(f"{where}: treatment is empty")
+            out.append(("spec.scene.treatment", f"{where}: treatment is empty"))
         if s.motion not in MOTIONS:
-            out.append(
-                f"{where}: motion {s.motion!r} is not in {list(MOTIONS)}"
-            )
+            out.append((
+                "spec.scene.motion",
+                f"{where}: motion {s.motion!r} is not in {list(MOTIONS)}",
+            ))
         # A motion is only real if the renderer emits the element it targets.
         # stat-hero builds its own <h1 class="figure"> and never calls
         # _title(), so word-sweep there emitted no word spans at all: accepted,
@@ -240,35 +292,49 @@ def _validate_scenes(spec: VideoSpec) -> list[str]:
         elif s.treatment in TREATMENTS:
             allowed = supported_motions(s.treatment)
             if s.motion not in allowed:
-                out.append(
+                out.append((
+                    "spec.scene.motion_unsupported",
                     f"{where}: treatment {s.treatment!r} does not support motion "
-                    f"{s.motion!r} (supported: {', '.join(allowed)})"
-                )
+                    f"{s.motion!r} (supported: {', '.join(allowed)})",
+                ))
         if s.duration_s <= 0:
-            out.append(f"{where}: duration_s must be > 0, got {s.duration_s}")
+            out.append((
+                "spec.scene.duration",
+                f"{where}: duration_s must be > 0, got {s.duration_s}",
+            ))
 
         for attr, cid in (
             ("title_claim_id", s.title_claim_id),
             ("narration_claim_id", s.narration_claim_id),
         ):
             if cid is not None and cid not in claim_ids:
-                out.append(f"{where}: {attr} references unknown claim {cid!r}")
+                out.append((
+                    "spec.scene.claim_ref",
+                    f"{where}: {attr} references unknown claim {cid!r}",
+                ))
 
         title = spec.claim(s.title_claim_id)
         if title is not None and title.kind != "title":
-            out.append(
+            out.append((
+                "spec.scene.title_claim_kind",
                 f"{where}: title_claim_id points at {title.claim_id} "
-                f"whose kind is {title.kind!r}, expected 'title'"
-            )
+                f"whose kind is {title.kind!r}, expected 'title'",
+            ))
 
         for aid in s.asset_ids:
             if aid not in asset_ids:
-                out.append(f"{where}: references unknown asset {aid!r}")
+                out.append((
+                    "spec.scene.asset_ref",
+                    f"{where}: references unknown asset {aid!r}",
+                ))
 
     # every claim should be used by something, otherwise it is dead weight
     used = {cid for s in spec.scenes for cid in (s.title_claim_id, s.narration_claim_id)}
     for c in spec.claims:
         if c.claim_id not in used:
-            out.append(f"claim {c.claim_id} is not referenced by any scene")
+            out.append((
+                "spec.claim.unreferenced",
+                f"claim {c.claim_id} is not referenced by any scene",
+            ))
 
     return out

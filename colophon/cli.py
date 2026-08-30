@@ -26,6 +26,7 @@ from typing import Any
 from .presentation.normalize import normalize
 from .qa import runner as qa_runner
 from .qa import eval_protocol as eval_protocol
+from .qa import taxonomy as taxonomy
 from .qa.runner import format_report
 from .qa.stages import grounding as grounding_stage
 from .qa.stages import media as media_stage
@@ -269,9 +270,18 @@ def cmd_qa(args: argparse.Namespace) -> int:
         spec_sha256=spec_sha256(spec),
     )
     print(format_report(result))
+    assessment = taxonomy.assess(result.results)
+    print(assessment)
     fp = eval_protocol.compute_eval_fingerprint()
     print(eval_protocol.format_eval_fingerprint(fp))
-    write_json({"eval_fingerprint": fp, **result.to_dict()}, attempt.qa / "qa-report.json")
+    write_json(
+        {
+            "eval_fingerprint": fp,
+            "assessment": assessment.to_dict(),
+            **result.to_dict(),
+        },
+        attempt.qa / "qa-report.json",
+    )
     return 0 if result.passed else 1
 
 
@@ -395,9 +405,18 @@ def cmd_deliver(args: argparse.Namespace) -> int:
         spec_sha256=digest,
     )
     print(format_report(result))
+    assessment = taxonomy.assess(result.results)
+    print(assessment)
     fp = eval_protocol.compute_eval_fingerprint()
     print(eval_protocol.format_eval_fingerprint(fp))
-    write_json({"eval_fingerprint": fp, **result.to_dict()}, attempt.qa / "qa-report.json")
+    write_json(
+        {
+            "eval_fingerprint": fp,
+            "assessment": assessment.to_dict(),
+            **result.to_dict(),
+        },
+        attempt.qa / "qa-report.json",
+    )
 
     from .spec.hash import scene_hashes as _scene_hashes
 
