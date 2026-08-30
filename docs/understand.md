@@ -369,6 +369,35 @@ trusted and a model's opinion cannot.
 **Provenance.** The record of what produced what. Every report carries the
 spec's hash, so "which spec made this video?" is always answerable.
 
+**Harness.** The *environment an agent works inside* — the loop that lets it act
+and look again, the tool calling, the sandbox it is allowed to touch, the
+approval prompts, and the memory of what happened earlier in the session. It is
+**not** the model. The model is the thing that thinks; the harness is the room
+it thinks in, with the doors and the tools.
+
+  *Concrete example:* when you chat to a coding assistant in its app, the app
+  is the harness. It decides whether the assistant may edit your files, it
+  remembers the conversation, and it keeps handing the assistant the results of
+  whatever it just did. Swap the model underneath and the app still works.
+  Colophon is the same idea for video: it owns the loop and the verdict, and a
+  harness is where you park an agent to drive it.
+
+**Runtime.** Whatever is actually executing the agent right now. TrueForge is
+today's runtime for colophon. It is swappable — anything that can make an HTTP
+call to the MCP server can drive the gates, and colophon runs to completion
+with every runtime deleted. See [ADR 0010](adr/0010-the-harness-is-a-seam-not-a-product.md).
+
+**MCP.** Model Context Protocol. A standard way for an agent to call a tool
+over HTTP and get structured JSON back. Colophon serves its seven tools this
+way, which is why any MCP-speaking client can drive it. Colophon uses HTTP
+rather than a subprocess because TrueForge's MCP client only supports remote
+servers.
+
+**API key.** Needed for the **model**, not for the harness and not for the
+gates. TrueForge starts with no key; colophon's 14 gates make zero model calls.
+The cost begins the moment you ask a model to read a verdict and decide what to
+do about it.
+
 **Seam.** A deliberately narrow joining point where one implementation can be
 swapped for another without the rest of the system noticing.
 

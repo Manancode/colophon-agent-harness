@@ -557,6 +557,35 @@ def guarded(fn: Callable[..., Any]) -> Callable[..., dict[str, Any]]:
     return wrapper
 
 
+def _register_tool(
+    server: Any, fn: Callable[..., Any], name: str, description: str
+) -> None:
+    """Register one tool, tolerating the two shapes of fastmcp's API.
+
+    Across the version range ``pyproject.toml`` allows, ``add_tool`` has meant
+    two different things: it used to take a function plus ``name=`` and
+    ``description=`` keywords, and it now takes a ``Tool`` object built by
+    ``Tool.from_function``. Both spellings are current somewhere in that range,
+    so try the newer one and fall back.
+
+    The incompatibility surfaces as a ``TypeError`` or ``ImportError`` raised
+    while constructing the tool — before anything is registered — so there is
+    no partial state to unwind if the first attempt fails.
+    """
+    tool = None
+    try:
+        from fastmcp.tools import Tool
+
+        tool = Tool.from_function(fn, name=name, description=description)
+    except (ImportError, TypeError):
+        tool = None
+
+    if tool is not None:
+        server.add_tool(tool)
+        return
+    server.add_tool(fn, name=name, description=description)
+
+
 def build_server() -> Any:
     """Build the MCP server. Requires the optional ``mcp`` dependency."""
     try:
@@ -568,7 +597,7 @@ def build_server() -> Any:
 
     server = FastMCP("colophon", instructions=INSTRUCTIONS)
     for fn, name, description in TOOLS:
-        server.add_tool(guarded(fn), name=name, description=description)
+        _register_tool(server, guarded(fn), name, description)
     return server
 
 

@@ -51,8 +51,13 @@ dev = [
 # Optional, and only for `colophon mcp serve`. The core pipeline stays pure
 # standard library: nothing a caller depends on may change the bytes the
 # renderer emits.
+# `mcp` is capped below 2 on purpose. fastmcp 2.14 imports `McpError` from
+# `mcp.shared.exceptions`; mcp 2.x renamed that symbol to `MCPError`, so an
+# unpinned install resolves to a combination that fails at import time with
+# "cannot import name 'McpError'". Nothing in colophon itself needs 2.x.
+# Loosen this when fastmcp ships a release that supports it.
 mcp = [
-    "mcp>=2.0",
+    "mcp>=1.10,<2",
     "fastmcp>=2.10",
 ]
 

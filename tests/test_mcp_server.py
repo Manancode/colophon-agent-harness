@@ -9,6 +9,7 @@ decorated closures.
 
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 
@@ -313,3 +314,34 @@ def test_design_without_an_out_dir_writes_nothing(tmp_path):
 
     assert result["ok"] is True
     assert result["written"] == {}
+
+
+# --------------------------------------------------------------------------
+# server registration
+# --------------------------------------------------------------------------
+
+
+def test_build_server_registers_every_tool():
+    """The registration path, which nothing else in this file exercises.
+
+    Every test above calls a tool function directly, which is the point — but
+    it means a broken registration could pass the whole suite. It did: fastmcp
+    changed ``add_tool`` from taking a function plus ``name=``/``description=``
+    keywords to taking a ``Tool`` object, and the mismatch surfaced as a
+    ``TypeError`` when starting the server, after 445 other tests had gone
+    green.
+
+    Skipped without the optional dependency, which is why the dependency is
+    optional.
+    """
+    pytest.importorskip("fastmcp", reason="optional MCP dependency not installed")
+
+    server = mcp_server.build_server()
+
+    manager = getattr(server, "_tool_manager", None)
+    assert manager is not None, "fastmcp server exposes no tool manager"
+
+    for _, name, _ in mcp_server.TOOLS:
+        tool = asyncio.run(manager.get_tool(name))
+        assert tool is not None, f"{name} was not registered"
+        assert tool.name == name

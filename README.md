@@ -165,6 +165,32 @@ None of the tools carry `@write` / `@destructive` annotations. TrueForge's
 default approval list is exactly those two, and unannotated tools are exempt —
 so the loop does not stall on permission prompts.
 
+### No API key is needed for the harness or the gates
+
+| Thing | Needs a key? |
+|---|---|
+| TrueForge (the harness) | **No** — standalone mode, no signup, local sandbox on macOS |
+| Colophon (the gates) | **No** — zero model calls, in the CLI and over MCP |
+| The agent that reads the verdict | **Yes** — the agent *is* a model |
+
+TrueForge starts and serves its UI with no provider configured; it fails only
+when you create a session (`422 Unknown model "<fqn>"`). Colophon's fourteen
+gates make no model calls at all. So the ground truth is demoable with no key
+whatsoever, and `colophon design` runs the same repair loop headlessly from the
+CLI — no agent, no key, no harness.
+
+### TrueForge is a seam, not a dependency
+
+Colophon is itself a harness: it owns the loop, the verdict and the repair
+router. TrueForge owns where the agent *sits* while it works. Delete
+`mcp_server.py` and TrueForge together and `colophon deliver` still runs end to
+end. Anything that speaks MCP over HTTP can drive the gates; TrueForge is
+today's choice, not a lock-in — see
+[ADR 0010](docs/adr/0010-the-harness-is-a-seam-not-a-product.md).
+
+The longer version of the argument, including what is honestly still missing,
+is in [docs/writeup.md](docs/writeup.md).
+
 ---
 
 ## The spec
@@ -321,10 +347,11 @@ docs/
   understand.md          plain-English walkthrough — start here
   map.html               the same thing as one visual page
   trueforge.md           running colophon inside the TrueForge harness
+  writeup.md             the argument, for the hackathon submission
   demo-script.md         shot list for the demo video
   video-spec.md          the spec contract
   roadmap.md             the gated plan and its decision rules
-  adr/                   nine architecture decision records
+  adr/                   ten architecture decision records
 examples/        runnable specs, including one deliberately broken
 scripts/         dev-time review tooling
 ```
@@ -333,7 +360,7 @@ scripts/         dev-time review tooling
 
 ## Design decisions
 
-Nine ADRs record *why* the system is shaped this way. Read them before
+Ten ADRs record *why* the system is shaped this way. Read them before
 proposing a change.
 
 | ADR | Decision |
@@ -347,6 +374,7 @@ proposing a change.
 | 0007 | The agent runtime is a caller, not a dependency |
 | 0008 | Explicit overlaps; no speed multiplier |
 | 0009 | Colophon runs inside an agent harness as an MCP tool server |
+| 0010 | The harness is a seam, not a product |
 
 ---
 
@@ -454,7 +482,7 @@ direction. That direction was not cosmetic:
 * **The architecture is human-authored.** The decision that a spec is the source
   of truth, that gates must be deterministic and model-free, that an agent
   runtime is a *caller* rather than a dependency, and that the taxonomy must
-  fail closed — all of it is recorded in the eight ADRs under `docs/adr/`, and
+  fail closed — all of it is recorded in the ten ADRs under `docs/adr/`, and
   each one states the trade-off that was accepted.
 * **The failure modes are human-authored.** The rules about opt-in agent
   invocation, SKIP-versus-FAIL honesty, and never silently substituting a

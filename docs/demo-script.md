@@ -53,14 +53,17 @@ source — you find out after you've published."
 **On screen:** side-by-side. Left: `colophon mcp serve` bound on :8000. Right:
 TrueForge on :8790.
 
-Run the tools/list curl so the seven tools appear on screen:
+Show the seven tools on screen:
 
 ```bash
-curl -s -X POST http://127.0.0.1:8000/mcp \
-  -H 'Content-Type: application/json' \
-  -H 'Accept: application/json, text/event-stream' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | head -c 1200
+python3 scripts/mcp_call.py colophon_gates
 ```
+
+Do **not** use a bare `tools/list` curl here — it returns
+`400 Bad Request: Missing session ID`, because streamable HTTP requires an
+`initialize` handshake and an `Mcp-Session-Id` header first. A judge watching
+you hit that error will reasonably conclude the server is broken. Use the
+script; it does the handshake.
 
 **Say:** "Colophon runs *inside* TrueForge. It's not calling out to a model for
 an opinion — it's serving fourteen deterministic gates as tools. TrueForge is
@@ -157,3 +160,53 @@ and no vote on shipping."
   iterations on screen.
 - **If a tool call fails**, leave it in. Showing the harness recover is more
   convincing than showing it be perfect.
+
+---
+
+## Fallback A — no model key
+
+You do not need a model key to show the loop working. The harness and the
+gates are both free; the key only buys you the *agent*.
+
+If you would rather not add a provider, record this instead of section 0:50–2:10:
+
+```bash
+# terminal: the gates, driven directly, no model involved
+colophon design examples/broken-duration.json
+```
+
+That runs the same repair loop headlessly. It reports the blockers, applies the
+mechanical fix, re-runs the gates, and stops — with no agent and no key. Then
+break something it *cannot* fix mechanically and run it again, so you get the
+"it stops rather than guessing" beat.
+
+You can also drive the MCP server directly to prove the socket is real and the
+tools are live:
+
+```bash
+python3 scripts/mcp_call.py colophon_validate '{"run_dir":"/tmp/colophon-demo"}'
+```
+
+That handles the `initialize` → `Mcp-Session-Id` → `notifications/initialized`
+handshake that streamable HTTP requires. A bare `tools/call` curl gets
+`400 Bad Request: Missing session ID` and proves nothing.
+
+**Say:** "Everything you've just seen runs with no model and no key. The agent
+is what TrueForge adds on top — it's the thing that reads this verdict and
+decides what to try next. The gates were never the part that needed a model."
+
+That is a weaker video for the hackathon (rule 3 wants the harness visible),
+but it is a complete, honest demo and it ships today.
+
+## Fallback B — rendering is not provisioned
+
+`colophon deliver` needs the renderer's `node_modules`, which is not installed
+in this checkout. Section 2:10–2:40 will fail until you provision it once:
+
+```bash
+colophon render runs/demo --renderer hyperframes
+```
+
+If that fails on network, cut section 2:10–2:40 and spend the time on the loop
+instead. The loop is the evidence; the fourteen-gate pass is supporting
+material. Do not fake the output.
