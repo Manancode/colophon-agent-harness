@@ -9,7 +9,8 @@ Pipeline:
     emit      spec -> editable video project
     render    project -> MP4
     qa        run the deterministic stage pipeline
-    review    extract frames + contact sheet for visual review
+    review    extract frames + contact sheet, bind the review context
+    record-review  validate an independent review, merge with the gates
     repair    apply targeted spec ops
     deliver   everything above, end to end
     resume    continue from the last attempt that matches the frozen spec
@@ -36,8 +37,12 @@ from .qa.stages import structure as structure_stage
 from .qa.stages import taste as taste_stage
 from .qa.stages import delivery as delivery_stage
 from .qa.stages import motion_velocity as motion_velocity_stage
+from .qa.rubric import rubric_markdown
 from .renderers.base import get_adapter
 from .review import extract as review_extract
+from .review import context as review_context
+from .review import critics as review_critics
+from .qa.taxonomy import Assessment, Finding, Severity
 from .runs import layout as run_layout
 from .runs import manifest as run_manifest
 from .runtime import tools
@@ -310,6 +315,23 @@ def cmd_review(args: argparse.Namespace) -> int:
     )
     review_extract.write_manifest(frameset, attempt.review / "frames.json")
 
+    # Build the hash-bound review context. Every artifact and preview is
+    # hashed here so the independent review that follows is provably a review
+    # of THIS attempt -- not last week's video, not a swapped file. The
+    # reviewer must copy these hashes back unchanged.
+    context = review_context.build_review_context(
+        attempt_id=f"{number:02d}",
+        spec_sha256=spec_sha256(spec),
+        video=video,
+        frames=frameset.frames,
+        contact_sheet=sheet,
+    )
+    context_path = review_context.write_review_context(
+        context, attempt.review / "review-context.json"
+    )
+    rubric_path = attempt.review / "rubric.md"
+    rubric_path.write_text(rubric_markdown(), encoding="utf-8")
+
     _log(f"Extracted {len(frameset.frames)} frames to {frames}")
     _log(f"Contact sheet: {sheet}")
     _log("")
@@ -325,7 +347,104 @@ def cmd_review(args: argparse.Namespace) -> int:
         else:
             shown = f"{stats.spread:.0f}"
         _log(f"  t={t:>6.2f}s  spread={shown}")
+    _log("")
+    _log("Independent visual review:")
+    _log(f"  context : {context_path}")
+    _log(f"  rubric  : {rubric_path}")
+    _log(f"  context hash: {context.review_context_sha256}")
+    _log("")
+    _log(
+        "A fresh reviewer (not the generator) scores the rubric, copies the "
+        "context hash and every artifact/preview hash back, and returns the "
+        "review JSON. Then:"
+    )
+    _log(
+        f"  colophon record-review {args.run_dir} --attempt {number} "
+        "--review review.json"
+    )
     return 0
+
+
+def _assessment_from_qa_report(report: dict) -> Assessment:
+    """Rebuild the deterministic verdict from a stored qa-report.json."""
+    a = report.get("assessment", {})
+    blockers = tuple(
+        Finding(
+            stage_id=f["stage_id"],
+            message=f["message"],
+            code=f.get("code"),
+            severity=Severity(f["severity"]),
+            known=f["known"],
+        )
+        for f in a.get("blockers", [])
+    )
+    warnings = tuple(
+        Finding(
+            stage_id=f["stage_id"],
+            message=f["message"],
+            code=f.get("code"),
+            severity=Severity(f["severity"]),
+            known=f["known"],
+        )
+        for f in a.get("warnings", [])
+    )
+    return Assessment(a.get("state", "blocked"), blockers, warnings)
+
+
+def cmd_record_review(args: argparse.Namespace) -> int:
+    """Validate an independent review and merge it with the deterministic verdict."""
+    paths = run_layout.run_paths(args.run_dir)
+    number = args.attempt or run_layout.latest_attempt(paths)
+    if number is None:
+        return _fail("no attempts to review")
+    attempt = run_layout.begin_attempt(paths, number)
+
+    context_path = attempt.review / "review-context.json"
+    if not context_path.is_file():
+        return _fail(f"no review context at {context_path}; run `colophon review` first")
+
+    try:
+        context = review_context.read_review_context(context_path)
+        review_context.validate_context(context)
+    except review_context.ContextError as exc:
+        return _fail(f"review context invalid: {exc}")
+
+    qa_report_path = attempt.qa / "qa-report.json"
+    if not qa_report_path.is_file():
+        return _fail(f"no qa-report.json at {qa_report_path}; run `colophon qa` first")
+    deterministic = _assessment_from_qa_report(
+        json.loads(qa_report_path.read_text(encoding="utf-8"))
+    )
+
+    review_path = Path(args.review)
+    if not review_path.is_file():
+        return _fail(f"review file not found: {review_path}")
+    try:
+        review = json.loads(review_path.read_text(encoding="utf-8"))
+        validated = review_critics.validate_review(review, context)
+    except (ValueError, review_critics.ReviewError) as exc:
+        return _fail(f"visual review rejected: {exc}")
+
+    merged = review_critics.merge_verdict(deterministic=deterministic, review=validated)
+
+    record = {
+        "attempt_id": context.attempt_id,
+        "review_context_sha256": context.review_context_sha256,
+        "reviewer": validated.reviewer,
+        "reviewer_mode": validated.reviewer_mode,
+        "verdict": validated.verdict,
+        "score_vector": validated.scores,
+        "blockers": list(validated.blockers),
+        "merged_assessment": merged.to_dict(),
+    }
+    write_json(record, attempt.review / "review-record.json")
+
+    _log(f"Reviewer : {validated.reviewer} ({validated.reviewer_mode})")
+    _log(f"Verdict  : {validated.verdict}")
+    print(merged)
+    _log("")
+    _log(f"Recorded: {attempt.review / 'review-record.json'}")
+    return 0 if merged.shippable else 1
 
 
 def cmd_repair(args: argparse.Namespace) -> int:
@@ -554,6 +673,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("run_dir")
     p.add_argument("--attempt", type=int)
     p.set_defaults(func=cmd_review)
+
+    p = commands.add_parser(
+        "record-review", help="validate an independent review and merge the verdicts"
+    )
+    p.add_argument("run_dir")
+    p.add_argument("--attempt", type=int)
+    p.add_argument("--review", required=True, help="path to the review JSON")
+    p.set_defaults(func=cmd_record_review)
 
     p = commands.add_parser("repair", help="apply targeted spec repairs")
     p.add_argument("run_dir")

@@ -23,10 +23,11 @@ obligation for our own code.
 
 | Component | Licence | Status |
 |---|---|---|
-| — | — | No MIT source is vendored at this time. |
+| Video review-rubric *mechanism* (per-dimension floor, hash-bound review context, complete-vector score validation, blind reviewer) | MIT © 2026 Yaxin Luo | Adapted, not vendored. The mechanism is re-implemented from the contract in `colophon/qa/rubric.py`, `colophon/review/context.py`, `colophon/review/critics.py`. The review *dimensions* are colophon's own: the source rubric scores research films and requires a white canvas, which would block colophon's `#0B0B0D` product films. |
 
-If MIT source is vendored later it must keep its copyright notice and licence
-text, and be listed here.
+The MIT source was read to learn the contract; no MIT file is copied into this
+repository. Where MIT code is vendored later it must keep its copyright notice
+and licence text, and be listed here.
 
 ---
 
