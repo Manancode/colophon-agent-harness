@@ -15,6 +15,7 @@ Pipeline:
     design    run the repair loop on a spec (mechanical fixes; --render also drives the renderer)
     deliver   everything above, end to end
     resume    continue from the last attempt that matches the frozen spec
+    bench     compare harnesses on known-good and known-bad artifacts
 """
 
 from __future__ import annotations
@@ -54,6 +55,8 @@ from .spec.schema import VideoSpec
 from .timeline.plan import build_plan
 from .harness import designer as harness_designer  # Phase 5 design-harness loop
 from .harness import orchestrator as harness_orchestrator  # Phase 6 render-aware loop
+from .bench import harness_matrix  # Phase 7 external bench
+from .bench.harness_matrix import format_matrix
 
 DEFAULT_RENDERER = "hyperframes"
 
@@ -654,6 +657,55 @@ def cmd_design(args: argparse.Namespace) -> int:
     return 0 if session.shippable else 1
 
 
+def cmd_bench(args: argparse.Namespace) -> int:
+    """Compare how well different harnesses spot a bad artifact.
+
+    Two rows are always cheap: ``colophon`` (our own gates) and ``naive`` (the
+    "it rendered, ship it" baseline an unchecked agent would use). The external
+    rows are real and really wired, but they stay off unless you pass
+    ``--agents``, because running a coding agent spends money, needs network and
+    credentials, takes minutes, and cannot be reproduced byte-for-byte.
+
+    Run without ``--agents`` to see whether our instrument works. Run with it
+    when you actually want to compare against another agent.
+    """
+    spec = None
+    if args.spec:
+        spec = load_spec(Path(args.spec))
+
+    report = harness_matrix.run_matrix_demo(
+        spec,
+        agents=args.agents,
+        timeout_s=args.timeout,
+        workdir=Path(args.workspace) if args.workspace else None,
+    )
+
+    if args.json:
+        # Flattened first: the in-memory cells are keyed by (brief, harness)
+        # tuples, which JSON has no way to express.
+        _log(json.dumps(harness_matrix.json_safe(report), indent=2, default=str))
+        return 0
+
+    _log(format_matrix(report))
+    _log("")
+    cells = report["cells"]
+    colophon_good = cells[("good_artifact", "colophon")]["passed"]
+    colophon_broken = not cells[("broken_stutter", "colophon")]["passed"]
+    naive_broken = cells[("broken_stutter", "naive")]["passed"]
+    _log(
+        "thesis: colophon accepts the good artifact"
+        f" ({colophon_good}) and rejects the stutter ({colophon_broken});"
+        f" naive accepts the stutter ({naive_broken})."
+    )
+    if not args.agents:
+        _log("")
+        _log(
+            "external agents were not run. Add --agents to actually invoke"
+            " codex/claude (costs money, needs network, not reproducible)."
+        )
+    return 0
+
+
 def cmd_resume(args: argparse.Namespace) -> int:
     paths = run_layout.run_paths(args.run_dir)
     number = run_manifest.resumable_attempt(paths)
@@ -774,6 +826,30 @@ def build_parser() -> argparse.ArgumentParser:
     p = commands.add_parser("resume", help="show the resumable attempt")
     p.add_argument("run_dir")
     p.set_defaults(func=cmd_resume)
+
+    p = commands.add_parser(
+        "bench", help="compare harnesses on known-good and known-bad artifacts"
+    )
+    p.add_argument(
+        "--spec", help="optional spec, used as context when prompting live agents"
+    )
+    p.add_argument(
+        "--agents",
+        action="store_true",
+        help="really run codex/claude (costs money, needs network, not reproducible)",
+    )
+    p.add_argument(
+        "--timeout",
+        type=int,
+        default=harness_matrix.DEFAULT_AGENT_TIMEOUT_S,
+        help=f"per-agent timeout in seconds (default: {harness_matrix.DEFAULT_AGENT_TIMEOUT_S})",
+    )
+    p.add_argument(
+        "--workspace",
+        help="directory for live agent scratch work (default: a temp dir per run)",
+    )
+    p.add_argument("--json", action="store_true", help="emit the raw matrix as JSON")
+    p.set_defaults(func=cmd_bench)
 
     return parser
 
