@@ -255,6 +255,18 @@ def test_unwired_agent_is_the_default():
     assert isinstance(UnwiredRepairAgent().repair(spec=_valid_spec(), findings=[]), type(None))
 
 
+def test_session_str_tolerates_uncoded_blockers():
+    """Regression: an uncoded finding carries ``code=None`` (the taxonomy fails
+    closed). Printing a session that routed one to the judgment path used to
+    raise ``TypeError`` inside ``", ".join(...)``, which meant ``colophon
+    design`` crashed on exactly the specs it most needs to report on."""
+    agent = _DecliningAgent()
+    session = run_design_loop(_single_spec(2.0), llm=agent)
+    assert session.aborted
+    rendered = str(session)
+    assert "<uncoded>" in rendered
+
+
 # --------------------------------------------------------------------------
 # CLI
 # --------------------------------------------------------------------------

@@ -12,7 +12,7 @@ Pipeline:
     review    extract frames + contact sheet, bind the review context
     record-review  validate an independent review, merge with the gates
     repair    apply targeted spec ops
-    design    run the repair loop on a spec (mechanical fixes only)
+    design    run the repair loop on a spec (mechanical fixes; --render also drives the renderer)
     deliver   everything above, end to end
     resume    continue from the last attempt that matches the frozen spec
 """
@@ -53,6 +53,7 @@ from .spec.io import write_json
 from .spec.schema import VideoSpec
 from .timeline.plan import build_plan
 from .harness import designer as harness_designer  # Phase 5 design-harness loop
+from .harness import orchestrator as harness_orchestrator  # Phase 6 render-aware loop
 
 DEFAULT_RENDERER = "hyperframes"
 
@@ -616,14 +617,29 @@ def cmd_design(args: argparse.Namespace) -> int:
     scene durations) and leaves taste-level blockers to a repair agent. With no
     agent wired it repairs what it can and otherwise stops in the blocked state,
     so the command never silently ships a broken spec.
+
+    Without ``--render`` the loop verifies only the spec-level gates (pure
+    Python, no encoder). With ``--render`` it also drives the renderer -- emit
+    the project, render the MP4, and run the full gate set on the artifact --
+    feeding those findings back into the same repair router. If the renderer
+    cannot run in this environment the loop degrades to spec-level and records
+    the reason in the session's ``render_attestation``; it never silently ships.
     """
     spec = load_spec(args.spec)
+    settings = harness_designer.DesignerSettings(
+        max_turns=args.max_turns,
+        default_scene_duration_s=args.default_duration_s,
+    )
+    driver = None
+    if args.render:
+        driver = harness_orchestrator.make_runtime_driver(
+            renderer=args.renderer, workspace=args.workspace
+        )
     session = harness_designer.run_design_loop(
         spec,
-        settings=harness_designer.DesignerSettings(
-            max_turns=args.max_turns,
-            default_scene_duration_s=args.default_duration_s,
-        ),
+        settings=settings,
+        driver=driver,
+        workspace=args.workspace,
     )
     _log(str(session))
     if args.out:
@@ -738,6 +754,20 @@ def build_parser() -> argparse.ArgumentParser:
         "--default-duration-s",
         type=float,
         default=harness_designer.DEFAULT_SCENE_DURATION_S,
+    )
+    p.add_argument(
+        "--render",
+        action="store_true",
+        help="also drive the renderer (emit + render + full QA) each turn",
+    )
+    p.add_argument(
+        "--renderer",
+        default=DEFAULT_RENDERER,
+        help="renderer adapter to use with --render (default: hyperframes)",
+    )
+    p.add_argument(
+        "--workspace",
+        help="directory for render attempts when --render is used",
     )
     p.set_defaults(func=cmd_design)
 
