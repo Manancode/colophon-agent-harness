@@ -273,6 +273,67 @@ loop both run headlessly with no key.
 
 ---
 
+## 5.5 Exactly where the key becomes necessary
+
+This is worth pinning down, because "do you need an API key?" has a more
+useful answer than yes or no. Everything below was run against a fresh
+TrueForge with **no valid key configured**, and each step succeeded:
+
+| # | Step | Needs a key? |
+|---|---|---|
+| 1 | Start TrueForge (`npx @truefoundry/trueforge@latest`) | **No** |
+| 2 | Start colophon (`colophon mcp serve`) | **No** |
+| 3 | Register colophon as an MCP server | **No** |
+| 4 | Enumerate the tools through TrueForge | **No** |
+| 5 | Call a gate and read a verdict | **No** |
+| 6 | Register an agent | **No** |
+| 7 | Create a session | **No** |
+| 8 | Create a turn and stream its events | **No** |
+| 9 | **The model generates its first token** | **Yes** |
+
+Step 9 is where it stops, and it stops cleanly:
+
+```
+turn.done  status: error
+           message: Request failed (401): Incorrect API key provided: sk-throw***robe.
+           metrics: { total_input_tokens: 0, total_output_tokens: 0, total_tokens: 0 }
+```
+
+So the harness, the socket, the tools, the session and the event stream are all
+free and all verifiable before you spend anything. **The key buys you the
+model, and nothing else.**
+
+If you want to reproduce that ladder, the calls are:
+
+```bash
+# 6. register an agent (model name must be a fully-qualified "provider/model")
+curl -s -X POST http://localhost:8790/api/v1/agents \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"codex","manifest":{"model":{"name":"openai/gpt-5-4-mini"}}}'
+
+# 7. create a session
+SID=$(curl -s -X POST http://localhost:8790/api/v1/sessions \
+  -H 'Content-Type: application/json' -d '{"agent":{"name":"codex"}}' \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
+
+# 8. send a turn, streamed as SSE
+curl -s -X POST "http://localhost:8790/api/v1/sessions/$SID/turns" \
+  -H 'Content-Type: application/json' -H 'Accept: text/event-stream' \
+  -d '{"input":[{"type":"user.message","content":"Call colophon_validate on /tmp/colophon-demo"}]}'
+```
+
+Two shapes that are easy to get wrong: the model name **must** be
+`provider/model` (a bare `gpt-5` is rejected with *"Model name must be a fully
+qualified provider/model"*), and the turn payload takes `input` as an **array
+of discriminated objects** — `{"type":"user.message","content":"…"}`. A
+top-level `"message"` field is accepted and then silently ignored, producing a
+turn that fails instantly with `Invalid prompt: messages must not be empty`.
+
+`turn.done` carries a `state` with `status`, `message` and `metrics`, so a
+failed turn is readable without watching the stream.
+
+---
+
 ## 6. Give the agent something real to do
 
 Two specs ship with the repo for exactly this purpose:

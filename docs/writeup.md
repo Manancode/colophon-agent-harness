@@ -89,18 +89,39 @@ can drive the gates; TrueForge is today's choice, not a lock-in. See
 
 **TrueForge: no. Colophon: no. The model: yes.**
 
-`npx @truefoundry/trueforge@latest` starts in standalone mode on port 8790 with
-no signup and no setup wizard; on macOS it falls back to a local sandbox, so it
-does not ask for a sandbox key either. Colophon's fourteen gates make zero model
-calls. The first thing that costs money is the moment you ask a model to read a
-verdict and decide what to do about it — and TrueForge starts and serves its UI
-happily with no provider configured, failing only at session creation with
-`422 Unknown model "<fqn>" — provider not configured`.
+That answer is empirical, not assumed. Running the whole stack with no valid
+key configured, every one of these succeeded:
 
-The practical consequence: **the ground truth is demoable with no key at all.**
-`colophon mcp serve` plus `curl` is a complete demonstration. The key buys you
-the agent driving the loop, not the loop itself. And `colophon design` runs the
-same repair loop headlessly from the CLI — no agent, no key, no harness.
+1. Start TrueForge — standalone, no signup, no setup wizard, local sandbox on macOS.
+2. Start colophon's MCP server.
+3. Register colophon as an MCP server in TrueForge.
+4. Enumerate all seven tools *through* TrueForge.
+5. Call a gate and read a verdict.
+6. Register an agent.
+7. Create a session.
+8. Create a turn and stream its events.
+
+And then, at the point the model actually generates:
+
+```
+turn.done  status: error
+           message: Request failed (401): Incorrect API key provided: sk-throw***robe.
+           metrics: { total_input_tokens: 0, total_output_tokens: 0, total_tokens: 0 }
+```
+
+So the harness, the socket, the tools, the session and the event stream are all
+free and all verifiable before anything is spent. **The key buys you the model
+and nothing else.** The exact calls to reproduce that ladder are in
+[docs/trueforge.md §5.5](trueforge.md#55-exactly-where-the-key-becomes-necessary).
+
+Two practical consequences:
+
+* **The ground truth is demoable with no key.** `colophon mcp serve` plus a
+  handshake-aware client is a complete demonstration. The key buys the agent
+  driving the loop, not the loop.
+* **You can skip the model entirely.** `colophon design` runs the same repair
+  loop headlessly from the CLI — no agent, no key, no harness. It fixes what it
+  can prove is safe to fix and stops where it cannot.
 
 ## What we built for this submission
 
