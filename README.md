@@ -191,6 +191,33 @@ today's choice, not a lock-in — see
 The longer version of the argument, including what is honestly still missing,
 is in [docs/writeup.md](docs/writeup.md).
 
+### Verified
+
+The wiring above is not aspirational — it was run. With `colophon mcp serve` on
+`:8000` and TrueForge on `:8790`:
+
+```bash
+$ curl -s http://localhost:8790/api/v1/mcp-servers/colophon/tools
+colophon_gates      List colophon's fourteen QA gates, what each checks, and
+                    what artifact it needs before it can run.
+colophon_doctor     Check whether this machine has the runtime colophon needs.
+colophon_init       Freeze a spec JSON file into a new run directory.
+colophon_validate   Run the four spec-level gates on a run.
+colophon_plan       Lay the scenes onto the clock and write plan.json.
+colophon_qa         Run all fourteen gates on an attempt.
+colophon_design     Run the bounded repair loop on a spec.
+```
+
+And a real three-call loop against `examples/broken-duration.json`, ending in
+`gates_passed` moving 1 → 4 with one number changed, and the spec hash moving
+`9caaf63f…` → `e62b7981…`. The full transcript is in
+[docs/trueforge.md](docs/trueforge.md#7-what-you-should-see).
+
+Two caveats stated plainly: that call proves the socket is wired, not that an
+agent used it (a session needs a configured agent and model); and rendering is
+not provisioned in this checkout, so the render-dependent gates degrade to
+spec-level with an explicit attestation rather than silently passing.
+
 ---
 
 ## The spec
@@ -420,8 +447,9 @@ Rules that keep the guarantees intact:
 
 ## Demo video
 
-> **TODO — the author records this.** ~3 minutes. Full shot list, timings and
-> narration in [docs/demo-script.md](docs/demo-script.md).
+> **TODO — the author records this.** I cannot generate video. ~3 minutes. Full
+> shot list, timings and narration in [docs/demo-script.md](docs/demo-script.md),
+> including a no-key fallback if you would rather not configure a model.
 
 The shape of it, so the harness work is visible rather than asserted:
 
@@ -437,37 +465,52 @@ The shape of it, so the harness work is visible rather than asserted:
 
 ## Qodo Code Review Evidence
 
-> **TODO — fill in once the PRs below are merged.** Required by the hackathon
-> rules: a link to a representative merged PR containing meaningful code, what
-> Qodo surfaced, and what was changed or dismissed with a reason.
+Rules 2 and 6 ask for substantive changes to go through Qodo-reviewed pull
+requests, and for the README to link a representative merged one.
 
-Rules 2 and 6 of the hackathon ask for substantive changes to go through
-Qodo-reviewed pull requests, and for the README to link one. The honest status
-as of this commit:
+**Representative PR:** <https://github.com/Manancode/colophon-agent-harness/pull/1>
+
+**Branch:** `feat/trueforge-mcp-server` → `main`
+
+**Status:** open, not yet reviewed. Qodo is not installed on this repository at
+the time of writing, so review is pending rather than done. It is listed here
+anyway because the honest state is more useful than a green tick.
+
+**What is in it, and what a reviewer should look at:**
+
+| Area | What to check |
+|---|---|
+| `qa/pipeline.py` | The gate classification is *derived* from each gate's signature, not hand-listed. Is the derivation sound? |
+| `mcp_server.py` | Every tool is a plain function behind a registration table. Every exception at the tool boundary is caught and returned as `{"ok": false, "error": ...}` rather than raised. Deliberate — see the ADR — but it is a real trade. |
+| `mcp_server.py` | `_register_tool` tries two shapes of fastmcp's `add_tool` and falls back. Is that the right amount of defensiveness, or is it hiding a pin we should make strict? |
+| `tests/test_mcp_server.py` | 21 tests that call the tool functions directly and never import an MCP library. Good for coverage, and it is precisely why a broken *registration* path passed 445 tests. |
+
+**The honest history:**
 
 * The 25 commits before this work were **direct pushes to `main`**. They cannot
   be retro-fitted with a review trail — a Qodo comment on a commit that never
   went through a PR is not evidence of review. They are disclosed as unreviewed.
-* Everything from here on goes through a PR. This section will name the
-  representative one.
+* Everything from here on goes through a PR. This is the first one in the
+  repository's history.
 
-**Representative PR:** _(link)_
+**What review has already changed, before Qodo ran:**
 
-**Branch:** _(name)_ → `main`
+Three defects were found by *running* the server rather than by reading the
+tests, all fixed in the second commit of this PR:
 
-**What Qodo surfaced, and what happened:**
+1. `add_tool` raised `TypeError` — fastmcp 2.14 takes a `Tool` object, not a
+   function with `name=`/`description=` keywords. Nothing caught it because
+   nothing built a server.
+2. `mcp` was pinned `>=2.0`; mcp 2.x renamed `McpError` to `MCPError`, which
+   fastmcp still imports, so the extra installed but would not import. Pinned
+   `>=1.10,<2`.
+3. Every documented `tools/list` curl returned `400 Missing session ID`,
+   because streamable HTTP needs an initialize handshake first. Replaced with
+   `scripts/mcp_call.py`.
 
-| Finding | Severity | Disposition |
-|---|---|---|
-| _(e.g. "broad `except Exception` at the tool boundary")_ | High | _Fixed / Dismissed — reason_ |
-| _(e.g. "duplicate gate list in three modules")_ | Medium | _Fixed / Dismissed — reason_ |
-
-**Review history:** _(link to the PR conversation showing review → decision →
-follow-up commit)_
-
-Every valid **High** finding is either fixed or dismissed with a written
-reason. **Medium** and **Low** are an engineering call, and where one is
-dismissed the reason goes in the table above rather than being quietly dropped.
+Every valid **High** finding will be fixed or dismissed with a written reason.
+**Medium** and **Low** are an engineering call, and where one is dismissed the
+reason goes in the table above rather than being quietly dropped.
 
 ---
 
