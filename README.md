@@ -376,6 +376,7 @@ docs/
   trueforge.md           running colophon inside the TrueForge harness
   writeup.md             the argument, for the hackathon submission
   demo-script.md         shot list for the demo video
+  qodo.md                how to install the reviewer and read its findings
   video-spec.md          the spec contract
   roadmap.md             the gated plan and its decision rules
   adr/                   ten architecture decision records
@@ -511,6 +512,11 @@ tests, all fixed in the second commit of this PR:
 Every valid **High** finding will be fixed or dismissed with a written reason.
 **Medium** and **Low** are an engineering call, and where one is dismissed the
 reason goes in the table above rather than being quietly dropped.
+
+**Reproducing the review:** install instructions, the `/review` command, and the
+severity obligations are in [docs/qodo.md](docs/qodo.md). One thing that is easy
+to get wrong — installing the app *after* a PR opens does not review that PR, so
+PR #1 needs `/review` posted on it by hand.
 
 ---
 
