@@ -24,7 +24,6 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -32,6 +31,12 @@ classifiers = [
     "Topic :: Multimedia :: Video",
     "Topic :: Software Development :: Quality Assurance",
 ]
+# No "License :: OSI Approved :: ..." classifier here on purpose. Modern
+# setuptools rejects it alongside an SPDX `license` expression — with both
+# present, `pip install -e .` fails outright:
+#   InvalidConfigError: License classifiers have been superseded by license
+#   expressions. Please remove: License :: OSI Approved :: Apache Software License
+# The `license` field above is the SPDX expression; it is the current spelling.
 
 # The core package is pure standard library by design. Nothing you depend on
 # can change the bytes your renderer emits. Pillow is needed only for the

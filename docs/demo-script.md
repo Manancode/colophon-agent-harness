@@ -33,18 +33,29 @@ Open the broken spec so it is visible in an editor pane:
 
 ## 0:00 – 0:20 · The problem
 
-**On screen:** nothing but a terminal. Run the naive path.
+**On screen:** nothing but a terminal. Show the broken spec being *accepted*.
 
 ```bash
-colophon deliver runs/naive --renderer hyperframes
+cat examples/broken-duration.json          # note s2 duration_s: 0
+colophon design examples/broken-duration.json
 ```
 
+The first command shows a spec where scene `s2` lasts **zero seconds** — a
+video that would play a blank frame. The second shows colophon catching it in
+one turn and clearing it.
+
 **Say:** "Here's the normal way this goes. An agent writes a video plan, a
-renderer turns it into a file, and it ships. Nothing checked it. If a scene
-lasts zero seconds, or the accent colour is wrong, or a number on screen has no
-source — you find out after you've published."
+renderer turns it into a file, and it ships. Nothing checked it. This spec has
+a scene that lasts zero seconds. Without something measuring it, you find that
+out after you've published."
 
 **Cut.**
+
+> **Do not use `colophon deliver` for this shot.** It needs a run directory
+> with a spec already frozen into it, and it needs the renderer. `runs/naive`
+> does not exist, so the command fails on camera. `colophon design` takes a
+> spec path directly and needs neither. This shot was written wrong once and
+> corrected after running it.
 
 ---
 
@@ -117,9 +128,15 @@ silently rewrites your spec is worse than one that admits it's stuck."
 
 ## 2:10 – 2:40 · All fourteen, on a real artifact
 
+> **This shot needs the renderer provisioned.** It will fail otherwise — see
+> Fallback B. Verify with `colophon doctor` before you record, and if it does
+> not resolve the renderer, cut this shot and give the time to the loop
+> instead. The loop is the evidence; this is supporting material.
+
 **On screen:** terminal.
 
 ```bash
+colophon init examples/two-scene.json runs/demo
 colophon deliver runs/demo --review
 colophon qa runs/demo
 ```
