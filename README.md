@@ -164,7 +164,8 @@ an emitted project or a rendered video.
 | 14 | `media_contract` | the file on disk matches what the spec promised: resolution, fps, duration | video |
 
 For a plain-English walkthrough of all of this, see
-[docs/understand.md](docs/understand.md).
+[docs/understand.md](docs/understand.md), or open
+[docs/map.html](docs/map.html) for the one-screen visual version.
 
 This is the load-bearing wall. Visual QA by vision model is close to a coin
 flip on boundary defects (UI-Lens, CVPR 2026: F1 11–42), so a model may
@@ -239,6 +240,7 @@ colophon/
 docs/
   architecture.md        system design
   understand.md          plain-English walkthrough — start here
+  map.html               the same thing as one visual page
   video-spec.md          the spec contract
   roadmap.md             the gated plan and its decision rules
   adr/                   eight architecture decision records

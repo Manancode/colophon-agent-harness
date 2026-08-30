@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colophon — how it works</title>
+<style>
+  :root {
+    --bg: #fbfaf8;
+    --panel: #ffffff;
+    --ink: #1b1a19;
+    --ink-soft: #5c5753;
+    --ink-faint: #8b8580;
+    --line: #e5e0d9;
+    --line-soft: #f0ece6;
+    --accent: #2f6f5e;
+    --accent-soft: #e8f2ef;
+    --amber: #b4703a;
+    --amber-soft: #fbf0e6;
+    --red: #a8443c;
+    --red-soft: #faeceb;
+    --blue: #3a5f8f;
+    --blue-soft: #eaf0f8;
+    --radius: 10px;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 48px 28px 96px; }
+
+  header.hero { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 44px; }
+  h1 { font-size: 32px; line-height: 1.2; margin: 0 0 10px; letter-spacing: -0.02em; }
+  .sub { color: var(--ink-soft); font-size: 17px; margin: 0; max-width: 62ch; }
+  .kicker {
+    font: 600 11px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 14px;
+  }
+
+  h2 {
+    font-size: 20px; margin: 56px 0 6px; letter-spacing: -0.01em;
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  h2 .n {
+    font: 600 12px/1 var(--mono); color: var(--ink-faint);
+    background: var(--line-soft); padding: 5px 8px; border-radius: 5px;
+  }
+  .lede { color: var(--ink-soft); margin: 0 0 22px; max-width: 74ch; }
+
+  /* ---- the journey ---- */
+  .journey { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin: 26px 0 8px; }
+  .step {
+    background: var(--panel); border: 1px solid var(--line); padding: 18px 16px;
+    position: relative;
+  }
+  .step:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+  .step:last-child { border-radius: 0 var(--radius) var(--radius) 0; border-right: 1px solid var(--line); }
+  .step + .step { border-left: none; }
+  .step .idx { font: 600 11px/1 var(--mono); color: var(--ink-faint); letter-spacing: 0.1em; }
+  .step h3 { margin: 8px 0 6px; font-size: 17px; }
+  .step p { margin: 0; font-size: 13.5px; color: var(--ink-soft); line-height: 1.55; }
+  .step .file { font: 12px/1.4 var(--mono); color: var(--ink-faint); margin-top: 10px; display: block; }
+  .step.is-source { border-color: var(--accent); border-width: 1px; box-shadow: inset 0 3px 0 var(--accent); }
+
+  .verbs { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 14px; }
+  .verb { font: 600 12px/1 var(--mono); color: var(--accent); text-align: center; letter-spacing: 0.06em; }
+  .verb::before { content: "↓  "; color: var(--ink-faint); font-weight: 400; }
+
+  /* ---- gates ---- */
+  .gate-groups { display: grid; grid-template-columns: 1fr 1.35fr; gap: 22px; margin-top: 24px; }
+  .group { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .group > .head { padding: 14px 18px; border-bottom: 1px solid var(--line-soft); }
+  .group > .head h3 { margin: 0; font-size: 15.5px; }
+  .group > .head p { margin: 4px 0 0; font-size: 13px; color: var(--ink-soft); }
+  .group.paper > .head { background: var(--blue-soft); border-bottom-color: #dde7f2; }
+  .group.artifact > .head { background: var(--amber-soft); border-bottom-color: #f2e4d5; }
+  .group.paper h3 { color: #2c4a70; }
+  .group.artifact h3 { color: #8a5327; }
+
+  .gate { padding: 13px 18px; border-bottom: 1px solid var(--line-soft); display: grid; grid-template-columns: 26px 1fr; gap: 12px; }
+  .gate:last-child { border-bottom: none; }
+  .gate .num { font: 600 12px/1.7 var(--mono); color: var(--ink-faint); }
+  .gate code { font: 13px/1.4 var(--mono); color: var(--ink); background: var(--line-soft); padding: 1px 6px; border-radius: 4px; }
+  .gate .what { font-size: 13.5px; color: var(--ink-soft); margin: 3px 0 0; }
+
+  /* ---- verdicts ---- */
+  .verdicts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 22px; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+  .verdict .tag { font: 600 12px/1 var(--mono); padding: 5px 9px; border-radius: 5px; display: inline-block; }
+  .v-go .tag { background: var(--accent-soft); color: #24564a; }
+  .v-warn .tag { background: var(--amber-soft); color: #8a5327; }
+  .v-stop .tag { background: var(--red-soft); color: #8e3a33; }
+  .verdict p { font-size: 13.5px; color: var(--ink-soft); margin: 12px 0 0; }
+
+  .callout {
+    background: var(--accent-soft); border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius) var(--radius) 0; padding: 16px 20px; margin-top: 24px;
+  }
+  .callout h4 { margin: 0 0 6px; font-size: 14.5px; color: #24564a; }
+  .callout p { margin: 0; font-size: 14px; color: #3a6357; }
+
+  /* ---- tables ---- */
+  table { width: 100%; border-collapse: collapse; margin-top: 20px; background: var(--panel);
+          border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  th { text-align: left; font: 600 12px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase;
+       color: var(--ink-faint); padding: 13px 16px; background: #faf8f5; border-bottom: 1px solid var(--line); }
+  td { padding: 12px 16px; border-bottom: 1px solid var(--line-soft); font-size: 14px; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td.cmd { font: 13px/1.4 var(--mono); color: var(--accent); white-space: nowrap; }
+  td.dim { color: var(--ink-soft); }
+
+  /* ---- seams ---- */
+  .seams { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 22px; }
+  .seam { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+  .seam h4 { margin: 0 0 4px; font-size: 15px; }
+  .seam .now { font: 12px/1.5 var(--mono); color: var(--ink-faint); }
+  .seam p { margin: 10px 0 0; font-size: 13.5px; color: var(--ink-soft); }
+  .seam .swap { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); font-size: 13.5px; color: var(--ink-soft); }
+  .seam .swap b { color: var(--ink); font-weight: 600; }
+
+  /* ---- glossary ---- */
+  .gloss { margin-top: 22px; }
+  .term { display: grid; grid-template-columns: 150px 1fr; gap: 18px; padding: 14px 0; border-bottom: 1px solid var(--line-soft); }
+  .term:last-child { border-bottom: none; }
+  .term dt { font: 600 13.5px/1.5 var(--mono); color: var(--ink); }
+  .term dd { margin: 0; font-size: 14px; color: var(--ink-soft); }
+  .term dd em { color: var(--ink); font-style: normal; font-weight: 600; }
+
+  footer { margin-top: 64px; padding-top: 22px; border-top: 1px solid var(--line);
+           font-size: 13px; color: var(--ink-faint); }
+
+  @media (max-width: 860px) {
+    .journey, .verbs { grid-template-columns: 1fr 1fr; }
+    .step { border-radius: 0 !important; border-left: 1px solid var(--line) !important; }
+    .gate-groups, .seams, .verdicts { grid-template-columns: 1fr; }
+    .term { grid-template-columns: 1fr; gap: 4px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="kicker">Colophon — plain English</div>
+  <h1>How the thing works</h1>
+  <p class="sub">
+    Colophon turns a written description of a video into a video, then argues
+    with itself about whether the result is any good. This page is the whole
+    system on one screen.
+  </p>
+</header>
+
+<!-- ===================== 1. THE JOURNEY ===================== -->
+<h2><span class="n">01</span> The journey of one video</h2>
+<p class="lede">
+  Four things get made, and keeping them apart is the central design decision.
+  When one file is simultaneously the plan, the project, the asset store and the
+  timeline, you cannot validate, compare or hash any part of it independently —
+  which is exactly the situation this project was extracted from.
+</p>
+
+<div class="journey">
+  <div class="step is-source">
+    <div class="idx">01</div>
+    <h3>Spec</h3>
+    <p>The recipe. Hand-editable, written <strong>once</strong>, never rewritten by a later step.</p>
+    <span class="file">spec.json</span>
+  </div>
+  <div class="step">
+    <div class="idx">02</div>
+    <h3>Project</h3>
+    <p>Editable HTML and CSS. Inspectable and diffable, and disposable — regenerated on the next emit.</p>
+    <span class="file">attempts/NN/project/</span>
+  </div>
+  <div class="step">
+    <div class="idx">03</div>
+    <h3>Video</h3>
+    <p>The MP4. Never edited by hand.</p>
+    <span class="file">attempts/NN/artifact/</span>
+  </div>
+  <div class="step">
+    <div class="idx">04</div>
+    <h3>Record</h3>
+    <p>Manifests, gate reports, hashes, review verdicts. The proof of what happened.</p>
+    <span class="file">qa/, manifest.json</span>
+  </div>
+</div>
+<div class="verbs">
+  <div class="verb">emit</div>
+  <div class="verb">render</div>
+  <div class="verb">qa</div>
+  <div class="verb"></div>
+</div>
+
+<div class="callout">
+  <h4>The one rule</h4>
+  <p>
+    The spec is written once and <strong>never rewritten</strong>. Attempts only
+    ever read it. That single rule is what makes “which spec made this video?”
+    answerable with one command instead of an archaeology session.
+  </p>
+</div>
+
+<!-- ===================== 2. THE GATES ===================== -->
+<h2><span class="n">02</span> The fourteen gates</h2>
+<p class="lede">
+  These are the health inspector. <strong>No gate calls an AI model</strong> —
+  each one is a rule you could check by hand, which is precisely why they can be
+  trusted to block a release.
+</p>
+
+<div class="gate-groups">
+  <div class="group paper">
+    <div class="head">
+      <h3>Work on paper — 4 gates</h3>
+      <p>Need nothing but the spec. Run before spending a second of render time.</p>
+    </div>
+    <div class="gate"><div class="num">1</div><div><code>spec_validate</code><p class="what">Unknown values, missing fields, malformed structure. “Your recipe mentions an ingredient we don’t stock.”</p></div></div>
+    <div class="gate"><div class="num">2</div><div><code>timeline_continuity</code><p class="what">Gaps between scenes, overlaps nobody declared, scenes scheduled off the end of the clock.</p></div></div>
+    <div class="gate"><div class="num">3</div><div><code>narrative_order</code><p class="what">Structurally odd running order — a call-to-action in the opening beat, say. <em>Advisory only:</em> it comments, it does not block.</p></div></div>
+    <div class="gate"><div class="num">4</div><div><code>delivery_contract</code><p class="what">The result isn’t actually a deliverable video: wrong canvas or frame rate, wrong length, sub-second scene, duplicate IDs.</p></div></div>
+  </div>
+
+  <div class="group artifact">
+    <div class="head">
+      <h3>Need a real artifact — 10 gates</h3>
+      <p>Read the emitted project or the encoded MP4.</p>
+    </div>
+    <div class="gate"><div class="num">5</div><div><code>static_html</code><p class="what">Lint on the markup: duplicate attributes, inline JavaScript handlers, remote asset links, fonts without a local source.</p></div></div>
+    <div class="gate"><div class="num">6</div><div><code>canvas_audit</code><p class="what">Background colour is the brand colour, and text isn’t invisible against it.</p></div></div>
+    <div class="gate"><div class="num">7</div><div><code>scene_structure</code><p class="what">Something is scheduled on the clock but draws nothing — a blank scene or a missing asset.</p></div></div>
+    <div class="gate"><div class="num">8</div><div><code>claim_grounding</code><p class="what">Every number and claim on screen traces back to a source you supplied. Nothing is invented.</p></div></div>
+    <div class="gate"><div class="num">9</div><div><code>ai_slop_detector</code><p class="what">The generic-AI look: cream-and-orange palette, sparkle glyphs in the copy, neon glow or ticker bar in the CSS.</p></div></div>
+    <div class="gate"><div class="num">10</div><div><code>color_consistency</code><p class="what">The emitted accent colour is the brand accent, not a nearby hue someone eyeballed.</p></div></div>
+    <div class="gate"><div class="num">11</div><div><code>centerpiece_invariant</code><p class="what">Exactly one motion focal point per scene. Two competing animations read as noise.</p></div></div>
+    <div class="gate"><div class="num">12</div><div><code>motion_accessibility</code><p class="what">No opt-out for people who asked their OS to reduce motion, or motion fast enough to read as flicker.</p></div></div>
+    <div class="gate"><div class="num">13</div><div><code>motion_pixel_velocity</code><p class="what">Motion slower than about 1 pixel per frame visibly stutters — screens can’t render half a pixel.</p></div></div>
+    <div class="gate"><div class="num">14</div><div><code>media_contract</code><p class="what">The file on disk matches the promise: resolution, frame rate, duration. Catches “the render succeeded but produced the wrong video”.</p></div></div>
+  </div>
+</div>
+
+<!-- ===================== 3. VERDICTS ===================== -->
+<h2><span class="n">03</span> What a failure means</h2>
+<p class="lede">
+  A gate reporting a problem is <strong>not</strong> the same as the run being
+  unshippable. The difference isn’t guessed from the wording of the message — it
+  is looked up in a fixed registry. Every run ends in one of three states.
+</p>
+
+<div class="verdicts">
+  <div class="verdict v-go">
+    <span class="tag">ready</span>
+    <p>Nothing to report. Ship it.</p>
+  </div>
+  <div class="verdict v-warn">
+    <span class="tag">ready_with_warnings</span>
+    <p>Only advisories. Worth a reviewer’s attention, still ships.</p>
+  </div>
+  <div class="verdict v-stop">
+    <span class="tag">blocked</span>
+    <p>At least one blocker — <strong>or something the registry doesn’t recognise</strong>.</p>
+  </div>
+</div>
+
+<div class="callout">
+  <h4>Why an unrecognised problem blocks</h4>
+  <p>
+    A system that classifies problems by matching their <em>text</em> gets more
+    permissive exactly when it is confused: a new kind of problem matches no
+    rule, gets filed as “unknown but presumably minor”, and ships. Inverting the
+    default fixes it. An unrecognised problem is not evidence that something is
+    safe — it is evidence that we don’t know what it is — so it blocks.
+    Forgetting to register a code costs you a blocked run you notice
+    immediately, rather than a shipped defect you notice in production.
+  </p>
+</div>
+
+<!-- ===================== 4. COMMANDS ===================== -->
+<h2><span class="n">04</span> Every command</h2>
+<p class="lede">In roughly the order you’d reach for them.</p>
+
+<table>
+  <thead><tr><th style="width:130px">Command</th><th>What it does</th><th style="width:38%">When you’d use it</th></tr></thead>
+  <tbody>
+    <tr><td class="cmd">doctor</td><td class="dim">Checks node, npm, ffmpeg and ffprobe resolve.</td><td class="dim">First thing, on a new machine.</td></tr>
+    <tr><td class="cmd">init</td><td class="dim">Freezes a spec into a new run directory.</td><td class="dim">Starting a video.</td></tr>
+    <tr><td class="cmd">plan</td><td class="dim">Lays the scenes onto the clock.</td><td class="dim">“Why is my video 19s and not 22s?”</td></tr>
+    <tr><td class="cmd">validate</td><td class="dim">Runs the paper gates. No rendering.</td><td class="dim">Fast feedback while still drafting.</td></tr>
+    <tr><td class="cmd">emit</td><td class="dim">Spec → editable HTML/CSS project.</td><td class="dim">You want to inspect or hand-edit the markup.</td></tr>
+    <tr><td class="cmd">render</td><td class="dim">Project → MP4.</td><td class="dim">You want the video.</td></tr>
+    <tr><td class="cmd">qa</td><td class="dim">Runs all fourteen gates.</td><td class="dim">You have a render and want the verdict.</td></tr>
+    <tr><td class="cmd">review</td><td class="dim">Extracts frames, builds a contact sheet.</td><td class="dim">You want eyes on it, not just rules.</td></tr>
+    <tr><td class="cmd">record-review</td><td class="dim">Merges an independent verdict with the gate results.</td><td class="dim">Feeding a reviewer’s verdict back in.</td></tr>
+    <tr><td class="cmd">repair</td><td class="dim">Applies targeted, validated edits to the spec.</td><td class="dim">You know what’s wrong and want it fixed precisely.</td></tr>
+    <tr><td class="cmd">design</td><td class="dim">The repair loop: check, fix, re-check, within a budget.</td><td class="dim">You want it fixed without hand-holding.</td></tr>
+    <tr><td class="cmd">deliver</td><td class="dim">Everything above, end to end.</td><td class="dim">The normal path.</td></tr>
+    <tr><td class="cmd">resume</td><td class="dim">Continues from the last attempt matching the spec.</td><td class="dim">A run was interrupted.</td></tr>
+    <tr><td class="cmd">bench</td><td class="dim">Compares our judgement against a naive baseline — and optionally against real coding agents.</td><td class="dim">Proving the instrument works.</td></tr>
+  </tbody>
+</table>
+
+<!-- ===================== 5. SEAMS ===================== -->
+<h2><span class="n">05</span> The four places you can swap something out</h2>
+<p class="lede">
+  Colophon is built so the parts most likely to change sit behind a seam. Each
+  has a working default and a documented interface — and the pipeline runs to
+  completion with any of them deleted.
+</p>
+
+<div class="seams">
+  <div class="seam">
+    <h4>Renderer</h4>
+    <div class="now">default: the HTML/CSS adapter</div>
+    <p>The only place in the codebase allowed to know what HTML and CSS are.</p>
+    <div class="swap"><b>Swap in:</b> a different way to turn a spec into pixels.</div>
+  </div>
+  <div class="seam">
+    <h4>Reviewer</h4>
+    <div class="now">default: contact sheet + recorded verdicts</div>
+    <p>QA is deterministic and machine-run; review is independent. They share no code.</p>
+    <div class="swap"><b>Swap in:</b> a different critic — human, model, or rubric.</div>
+  </div>
+  <div class="seam">
+    <h4>Repair agent</h4>
+    <div class="now">default: <em>not wired</em></div>
+    <p>Mechanical fixes run automatically. Judgement calls stop the loop and report rather than guess.</p>
+    <div class="swap"><b>Swap in:</b> a model that proposes spec edits. Off by default on purpose.</div>
+  </div>
+  <div class="seam">
+    <h4>Bench agent</h4>
+    <div class="now">default: skipped unless <code>--agents</code></div>
+    <p>Running a coding agent costs money, needs network, and can’t be reproduced.</p>
+    <div class="swap"><b>Swap in:</b> another coding agent to compare against.</div>
+  </div>
+</div>
+
+<!-- ===================== 6. GLOSSARY ===================== -->
+<h2><span class="n">06</span> Glossary</h2>
+<p class="lede">Every term decoded, with the concrete example from this project.</p>
+
+<dl class="gloss">
+  <div class="term"><dt>Spec</dt><dd>The recipe. A JSON file describing scenes, timing, text and colours. The single source of truth; everything else is derived from it.</dd></div>
+  <div class="term"><dt>Emit</dt><dd>Turning the spec into an editable project <em>before</em> rendering, so the markup can be inspected and checked without paying for an encode.</dd></div>
+  <div class="term"><dt>Attempt</dt><dd>One numbered try inside a run directory. Attempts are disposable; the spec is not.</dd></div>
+  <div class="term"><dt>Gate / Stage</dt><dd>One deterministic check. Pass or fail, with reasons. No opinions. “Stage” is the code that implements a gate.</dd></div>
+  <div class="term"><dt>Blocker vs advisory</dt><dd>A blocker stops the run. An advisory is worth reading but still ships.</dd></div>
+  <div class="term"><dt>Fails closed</dt><dd>When in doubt, say “stop” rather than “go”. An unrecognised problem blocks rather than being waved through.</dd></div>
+  <div class="term"><dt>Taxonomy</dt><dd>The fixed registry of failure codes and their severities. If a problem’s code isn’t in it, the run blocks.</dd></div>
+  <div class="term"><dt>Grounding</dt><dd>Every claim on screen must trace back to a source you supplied. Nothing is invented at render time — treatments can only arrange the copy you gave them, which makes an unbound number structurally impossible rather than merely detected afterwards.</dd></div>
+  <div class="term"><dt>Treatment</dt><dd>A named motion behaviour for a scene — a word-by-word sweep, a thinking pulse. A bounded set, each with preconditions.</dd></div>
+  <div class="term"><dt>Role</dt><dd>What a scene is <em>for</em>: hook, problem, solution, proof, call to action. Roles have a sensible order, and gate 3 checks you didn’t put the call to action first.</dd></div>
+  <div class="term"><dt>Canvas audit</dt><dd>The background-colour check. It walks ancestors only, so a clip’s own background must be the brand colour while its children are free to vary — that is where legitimate visual variety lives.</dd></div>
+  <div class="term"><dt>Contact sheet</dt><dd>A grid of still frames pulled from the video, so a human or model can review it without scrubbing a timeline.</dd></div>
+  <div class="term"><dt>Frame vs second</dt><dd>Colophon authors in <em>seconds</em>; frame rate is a renderer concern. Hardcoding <code>TITLE_HOLD_FRAMES = 100</code> silently means something different the moment you switch to 60fps.</dd></div>
+  <div class="term"><dt>Authored vs timeline</dt><dd>The <em>authored</em> total is the sum of scene lengths. The <em>timeline</em> total is what the composition actually runs, which is shorter when scenes overlap at their boundaries. The timeline total is the delivery baseline, because it is what ships.</dd></div>
+  <div class="term"><dt>Deterministic</dt><dd>Same input, same output, every time. Why the gates can be trusted and a model’s opinion cannot.</dd></div>
+  <div class="term"><dt>Provenance</dt><dd>The record of what produced what. Every report carries the spec’s hash, so “which spec made this video?” is always answerable.</dd></div>
+  <div class="term"><dt>Seam</dt><dd>A deliberately narrow joining point where one implementation can be swapped for another without the rest of the system noticing.</dd></div>
+  <div class="term"><dt>Live agent row</dt><dd>A bench result that came from really running codex or claude. Marked with <code>*</code> in the table, because it is a record of one real attempt, not a reproducible number.</dd></div>
+</dl>
+
+<footer>
+  Generated alongside the code — the gate table is checked against the stage
+  list by <code>tests/test_docs.py</code>, so this page cannot quietly fall out
+  of date. Longer prose version: <code>docs/understand.md</code>.
+</footer>
+
+</div>
+</body>
+</html>

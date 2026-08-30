@@ -7,7 +7,8 @@ unavoidable, it is explained the first time it appears and listed again in the
 [glossary](#glossary).
 
 If you want the engineer's version instead, read
-[architecture.md](architecture.md).
+[architecture.md](architecture.md). For the same content as a single visual
+page you can keep open, open [map.html](map.html).
 
 ---
 

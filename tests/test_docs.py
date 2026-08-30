@@ -19,6 +19,7 @@ from colophon.harness.designer import _default_render_stages
 REPO = Path(__file__).resolve().parents[1]
 README = REPO / "README.md"
 UNDERSTAND = REPO / "docs" / "understand.md"
+MAP = REPO / "docs" / "map.html"
 
 #: Spelled-out numbers, so the prose can be checked against the stage list.
 WORD_NUMBERS = {
@@ -67,10 +68,16 @@ def test_every_gate_appears_in_the_plain_english_guide():
     assert not missing, f"gates missing from docs/understand.md: {missing}"
 
 
+def test_every_gate_appears_in_the_visual_map():
+    page = MAP.read_text()
+    missing = [i for i in _stage_ids() if f"<code>{i}</code>" not in page]
+    assert not missing, f"gates missing from docs/map.html: {missing}"
+
+
 def test_no_doc_claims_the_wrong_number_of_gates():
     """The specific drift that happened: the README said thirteen."""
     expected = len(_stage_ids())
-    for path in (README, UNDERSTAND):
+    for path in (README, UNDERSTAND, MAP):
         text = path.read_text()
         for number, word in WORD_NUMBERS.items():
             if number == expected:
