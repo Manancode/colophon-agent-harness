@@ -214,9 +214,12 @@ And a real three-call loop against `examples/broken-duration.json`, ending in
 [docs/trueforge.md](docs/trueforge.md#7-what-you-should-see).
 
 Two caveats stated plainly: that call proves the socket is wired, not that an
-agent used it (a session needs a configured agent and model); and rendering is
-not provisioned in this checkout, so the render-dependent gates degrade to
-spec-level with an explicit attestation rather than silently passing.
+agent used it (a session needs a configured agent and model). The renderer, by
+contrast, **now runs**: `npm install` in
+`colophon/renderers/hyperframes/runtime/` pulls HyperFrames 0.7.86, and
+`colophon deliver runs/cadence-01 --review` renders a real 1920×1080, 30 fps,
+43.67 s video that **all 14 gates pass** end to end — verified against
+`runs/cadence-01` attempt 05, not assumed.
 
 ---
 
@@ -377,6 +380,7 @@ docs/
   writeup.md             the argument, for the hackathon submission
   demo-script.md         shot list for the demo video
   qodo.md                how to install the reviewer and read its findings
+  where-we-are.md        blunt status: what is built, what is not, what is next
   video-spec.md          the spec contract
   roadmap.md             the gated plan and its decision rules
   adr/                   ten architecture decision records

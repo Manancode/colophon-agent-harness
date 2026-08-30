@@ -166,10 +166,11 @@ tests. All 445 tests passed with that bug in the tree.
 * **Qodo review evidence is pending.** Everything before this work was a direct
   push to `main` and cannot be retro-fitted with a review trail. That is
   disclosed in the README rather than papered over.
-* **Rendering is not exercised in this environment.** The renderer's
-  `node_modules` is not provisioned here, so the render-dependent gates
-  degrade to spec-level with an explicit attestation recorded in the run.
-  The degradation is honest — it never silently passes.
+* **Rendering now runs.** `npm install` in
+  `colophon/renderers/hyperframes/runtime/` provisions HyperFrames 0.7.86, and
+  `colophon deliver` renders a real 1920×1080, 30 fps, 43.67 s video that all
+  14 gates pass end to end — verified against `runs/cadence-01` attempt 05,
+  not assumed.
 * **The grammar is small on purpose.** 3 motions is a starting point, not a
   finished vocabulary. Step 2 of the roadmap (bounded vocabulary + curated
   exemplars) is in progress.
