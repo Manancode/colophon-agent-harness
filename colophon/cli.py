@@ -313,10 +313,18 @@ def cmd_review(args: argparse.Namespace) -> int:
     _log(f"Extracted {len(frameset.frames)} frames to {frames}")
     _log(f"Contact sheet: {sheet}")
     _log("")
-    _log("Frame luma (a bare canvas reads ~25; higher means content):")
-    for t, value in zip(frameset.timestamps, review_extract.luminance_at(video, stamps)):
-        shown = f"{value:.2f}" if value is not None else "n/a"
-        _log(f"  t={t:>6.2f}s  YAVG {shown}")
+    # Spread, not average. A bare canvas reads spread=0 (every pixel is the
+    # same pixel); a frame with content reads 100-250 depending on contrast.
+    # The average is nearly blind on a dark design: content lifts YAVG by
+    # ~1.6 units while it lifts the peak by ~206. The spread moves in both
+    # directions, so it works for light-on-dark and dark-on-light designs.
+    _log("Frame spread (0 = blank, >8 means content was drawn):")
+    for t, stats in zip(frameset.timestamps, review_extract.luma_stats_at(video, stamps)):
+        if stats.spread is None:
+            shown = "n/a"
+        else:
+            shown = f"{stats.spread:.0f}"
+        _log(f"  t={t:>6.2f}s  spread={shown}")
     return 0
 
 
