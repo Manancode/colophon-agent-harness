@@ -24,6 +24,7 @@ obligation for our own code.
 | Component | Licence | Status |
 |---|---|---|
 | Video review-rubric *mechanism* (per-dimension floor, hash-bound review context, complete-vector score validation, blind reviewer) | MIT © 2026 Yaxin Luo | Adapted, not vendored. The mechanism is re-implemented from the contract in `colophon/qa/rubric.py`, `colophon/review/context.py`, `colophon/review/critics.py`. The review *dimensions* are colophon's own: the source rubric scores research films and requires a white canvas, which would block colophon's `#0B0B0D` product films. |
+| Design-harness *loop mechanism* (bounded designer loop, mechanical-vs-judgment repair routing, repeated-error abort) | MIT © 2026 Yaxin Luo | Adapted, not vendored. Re-implemented in `colophon/harness/designer.py`. Divergence by design: the source routes by **text markers** on a composite blocker list; colophon routes **per finding, by taxonomy code**, through a registry of deterministic remedies (`MECHANICAL_CODES`) so the fails-closed taxonomy stays authoritative. The reference's loop budget (30 turns) and repeated-error threshold (4) are carried over. |
 
 The MIT source was read to learn the contract; no MIT file is copied into this
 repository. Where MIT code is vendored later it must keep its copyright notice

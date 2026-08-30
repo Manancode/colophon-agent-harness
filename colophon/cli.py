@@ -12,6 +12,7 @@ Pipeline:
     review    extract frames + contact sheet, bind the review context
     record-review  validate an independent review, merge with the gates
     repair    apply targeted spec ops
+    design    run the repair loop on a spec (mechanical fixes only)
     deliver   everything above, end to end
     resume    continue from the last attempt that matches the frozen spec
 """
@@ -51,6 +52,7 @@ from .spec.io import load as load_spec
 from .spec.io import write_json
 from .spec.schema import VideoSpec
 from .timeline.plan import build_plan
+from .harness import designer as harness_designer  # Phase 5 design-harness loop
 
 DEFAULT_RENDERER = "hyperframes"
 
@@ -607,6 +609,35 @@ def cmd_deliver(args: argparse.Namespace) -> int:
     return 0 if result.passed else 1
 
 
+def cmd_design(args: argparse.Namespace) -> int:
+    """Run the design-harness loop on a spec and write the repaired result.
+
+    Mechanically fixes the spec-level blockers it can (today: non-positive
+    scene durations) and leaves taste-level blockers to a repair agent. With no
+    agent wired it repairs what it can and otherwise stops in the blocked state,
+    so the command never silently ships a broken spec.
+    """
+    spec = load_spec(args.spec)
+    session = harness_designer.run_design_loop(
+        spec,
+        settings=harness_designer.DesignerSettings(
+            max_turns=args.max_turns,
+            default_scene_duration_s=args.default_duration_s,
+        ),
+    )
+    _log(str(session))
+    if args.out:
+        out = Path(args.out)
+        out.mkdir(parents=True, exist_ok=True)
+        from .spec.io import save
+
+        save(session.final_spec, out / "spec.designed.json")
+        write_json(session.to_dict(), out / "design-session.json")
+        _log(f"  wrote {out / 'spec.designed.json'}")
+        _log(f"  wrote {out / 'design-session.json'}")
+    return 0 if session.shippable else 1
+
+
 def cmd_resume(args: argparse.Namespace) -> int:
     paths = run_layout.run_paths(args.run_dir)
     number = run_manifest.resumable_attempt(paths)
@@ -696,6 +727,19 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--review", action="store_true", help="also build the review package")
     p.add_argument("--no-review", dest="review", action="store_false")
     p.set_defaults(func=cmd_deliver, review=True)
+
+    p = commands.add_parser(
+        "design", help="run the repair loop on a spec (mechanical fixes only)"
+    )
+    p.add_argument("spec", help="path to the spec JSON")
+    p.add_argument("--out", help="directory to write the repaired spec + session")
+    p.add_argument("--max-turns", type=int, default=harness_designer.MAX_DESIGNER_TURNS)
+    p.add_argument(
+        "--default-duration-s",
+        type=float,
+        default=harness_designer.DEFAULT_SCENE_DURATION_S,
+    )
+    p.set_defaults(func=cmd_design)
 
     p = commands.add_parser("resume", help="show the resumable attempt")
     p.add_argument("run_dir")
