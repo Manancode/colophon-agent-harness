@@ -166,6 +166,7 @@ Run `colophon <command> --help` for flags. In rough order of how you'd use them.
 | `deliver` | Everything above, end to end. | The normal path. |
 | `resume` | Shows the last attempt matching the frozen spec and continues from there. | A run was interrupted. |
 | `bench` | Compares colophon's judgement against a naive "it rendered, ship it" baseline — and optionally against real coding agents. | Proving the instrument works. |
+| `mcp` | Serves colophon's pipeline as MCP tools over HTTP (`colophon mcp serve`). | You want an agent harness — TrueForge, say — to drive the gates in a loop. |
 
 ### Two commands that deserve a paragraph
 
@@ -199,6 +200,63 @@ An agent that fails to produce anything is reported as **SKIP with the
 reason**, not as a failure. "codex scored 0/2" reads as a verdict on codex's
 ability; "codex never ran — no network" is usually the truth. Conflating them
 would publish a number that is really just a fact about the wifi.
+
+---
+
+## Running colophon inside an agent harness
+
+Colophon is an instrument, not an employee. It reports what is wrong; it does
+not decide what to do about it. Something has to read the report and act.
+
+That "something" is an **agent harness** — the environment an agent works
+inside: the loop that lets it take an action and look at the result, the tool
+calling, the sandbox, the approvals, the session state. (It is the same sense
+in which a coding assistant runs inside its own harness: the harness is the
+runtime, and the model is only one part of it.)
+
+Colophon plugs into one as an **MCP server**:
+
+```
+   ┌──────────────────────── agent harness (e.g. TrueForge) ───────────────┐
+   │                                                                       │
+   │   agent  ──calls──>  colophon tools  ──returns──>  blockers            │
+   │     ▲                                                    │            │
+   │     └────────── edits the spec, re-runs the gates ────────┘            │
+   └───────────────────────────────────────────────────────────────────────┘
+                                    │
+                          HTTP (MCP), localhost
+                                    │
+                     colophon mcp serve  →  the 14 gates
+```
+
+Start the server, point the harness at it, and the agent picks up seven tools:
+
+| Tool | What the agent gets back |
+|---|---|
+| `colophon_gates` | All 14 gates, what each checks, and what it needs before it can tell the truth. |
+| `colophon_doctor` | Whether this machine has the runtime (node, ffmpeg, ffprobe). |
+| `colophon_init` | A frozen run directory and the spec's hash. |
+| `colophon_validate` | The 4 paper gates — cheap, no artifacts needed. The one to loop on. |
+| `colophon_plan` | The timeline: when every scene starts and ends. |
+| `colophon_qa` | All 14 gates on an attempt. |
+| `colophon_design` | The bounded repair loop, and how far it got. |
+
+Every answer has the same shape: a `state` (`blocked`, `ready_with_warnings`,
+`ready`), a list of **blockers** naming the gate and the failure code, a list
+of **warnings**, and a one-line `hint` telling the agent what to do next.
+
+The hint exists because of a specific way agents get this wrong. Before an
+artifact exists, several gates report *"nothing to check"* — and colophon
+counts that as a blocker, because failing closed is the whole point. An agent
+that doesn't know this reads the blocker as a defect it caused and starts
+"fixing" a spec that was fine. The hint says out loud what a human would have
+inferred: emit first, then re-read me.
+
+Why the harness matters here: the loop is where the work happens. The agent is
+not asking a model "is this video good?" — a coin flip on exactly the subtle
+failures that matter. It is calling a deterministic instrument, reading a
+precise answer, and acting on it. The harness supplies the loop; colophon
+supplies the ground truth.
 
 ---
 
@@ -240,7 +298,9 @@ One line each. If you only remember this table, you can find your way around.
 | `bench/` | Comparing colophon's judgement against other harnesses. |
 | `runs/` | Run directory layout, attempt numbering, manifests, recovery. |
 | `runtime/` | Finding and pinning node/npm/ffmpeg/ffprobe so a run is reproducible. |
+| `qa/pipeline.py` | The 14-gate catalog and the two canonical gate sets, derived not hand-listed. |
 | `adapters/agent/` | Optional translation helpers for an agent driving colophon. Deletable. |
+| `mcp_server.py` | The same pipeline exposed as MCP tools over HTTP, for an agent harness. Needs `pip install '.[mcp]'`. |
 
 ---
 

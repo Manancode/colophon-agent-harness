@@ -16,6 +16,7 @@ Pipeline:
     deliver   everything above, end to end
     resume    continue from the last attempt that matches the frozen spec
     bench     compare harnesses on known-good and known-bad artifacts
+    mcp       expose colophon as MCP tools over HTTP (for an agent harness)
 """
 
 from __future__ import annotations
@@ -57,6 +58,7 @@ from .harness import designer as harness_designer  # Phase 5 design-harness loop
 from .harness import orchestrator as harness_orchestrator  # Phase 6 render-aware loop
 from .bench import harness_matrix  # Phase 7 external bench
 from .bench.harness_matrix import format_matrix
+from . import mcp_server  # MCP tool surface (TrueForge integration)
 
 DEFAULT_RENDERER = "hyperframes"
 
@@ -706,6 +708,19 @@ def cmd_bench(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_mcp(args: argparse.Namespace) -> int:
+    """Expose colophon as MCP tools over HTTP.
+
+    This is the seam an agent harness plugs into. Colophon supplies the gates
+    (ground truth); the harness supplies the loop, the tools and the session
+    state. ``colophon mcp serve`` is all that is needed — everything else is
+    ordinary tool calls the harness discovers for itself.
+    """
+    from .mcp_server import main as mcp_main
+
+    return mcp_main(["serve", "--host", args.host, "--port", str(args.port)])
+
+
 def cmd_resume(args: argparse.Namespace) -> int:
     paths = run_layout.run_paths(args.run_dir)
     number = run_manifest.resumable_attempt(paths)
@@ -850,6 +865,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--json", action="store_true", help="emit the raw matrix as JSON")
     p.set_defaults(func=cmd_bench)
+
+    p = commands.add_parser(
+        "mcp", help="expose colophon as MCP tools over HTTP (for an agent harness)"
+    )
+    sub = p.add_subparsers(dest="mcp_command", required=True)
+    s = sub.add_parser("serve", help="run the HTTP MCP server")
+    s.add_argument(
+        "--host", default=mcp_server.DEFAULT_HOST, help="interface to bind"
+    )
+    s.add_argument(
+        "--port", type=int, default=mcp_server.DEFAULT_PORT, help="port to listen on"
+    )
+    p.set_defaults(func=cmd_mcp)
 
     return parser
 

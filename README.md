@@ -15,7 +15,7 @@ brief + brand + assets  →  agent  →  canonical spec   ← the source of trut
                                           ↓
                                        render         ← HyperFrames → MP4
                                           ↓
-                                  deterministic QA   ← 13 gates, no model calls
+                                  deterministic QA   ← 14 gates, no model calls
                                           ↓
                                 independent review   ← contact sheet for a human
                                           ↓
@@ -33,7 +33,7 @@ plan will *look good*. That is the whole problem, and it splits cleanly in two:
 
 | Kind of wrong | Caught by | Status |
 |---|---|---|
-| A scene is 0.2 s long. Text overflows. The colour isn't the brand colour. A claim isn't supported by its source. | a computer | **solved** — 7 gates |
+| A scene is 0.2 s long. Text overflows. The colour isn't the brand colour. A claim isn't supported by its source. | a computer | **solved** — 14 gates |
 | The movement feels cheap. | a human | **the only unsolved part** |
 
 Colophon's bet is that the second kind becomes tractable if you stop letting
@@ -87,6 +87,83 @@ The full command surface:
 | `deliver` | run the whole pipeline end to end |
 | `resume` | show the resumable attempt |
 | `bench` | compare harnesses; `--agents` runs real codex/claude |
+| `mcp` | serve the pipeline as MCP tools over HTTP, for an agent harness |
+
+---
+
+## How it uses TrueForge
+
+Colophon is an instrument, not an employee. It reports what is wrong with a
+video spec; it does not decide what to do about it. **TrueForge** is the
+environment an agent works inside — the loop, the tool calling, the sandbox,
+the approvals, the session state — so it is where an agent belongs when the job
+is "read the report and act on it".
+
+The integration is not a wrapper. Colophon runs **inside** TrueForge as an MCP
+tool server, and the agent does the work:
+
+```
+   ┌──────────────────────── TrueForge (the harness) ────────────────────────┐
+   │                                                                         │
+   │   agent ──calls──> colophon_validate ──> { state, blockers, hint }      │
+   │     ▲                                              │                    │
+   │     └──── edits the spec, re-runs the gate ─────────┘                   │
+   └─────────────────────────────────────────────────────────────────────────┘
+                                   │
+                         HTTP (MCP), localhost
+                                   │
+                    colophon mcp serve  →  the 14 gates
+```
+
+The agent is not asking a model "is this video good?" — on boundary defects
+that is close to a coin flip (UI-Lens, CVPR 2026: F1 11–42). It is calling a
+deterministic instrument, reading a precise answer naming the gate and the
+failure code, and acting on it. **The harness supplies the loop; colophon
+supplies the ground truth.**
+
+### Setting it up
+
+```bash
+# 1. colophon, with the optional MCP transport
+pip install -e '.[dev,mcp]'
+
+# 2. serve the tools (leave running)
+colophon mcp serve --host 127.0.0.1 --port 8000
+
+# 3. start the harness (local/standalone mode; no signup, no setup wizard)
+npx @truefoundry/trueforge@latest      # listens on :8790
+```
+
+Then in TrueForge: **Settings → MCP servers → Add**, type `remote`, URL
+`http://127.0.0.1:8000/mcp`. Add a model provider under **Settings → Model
+providers** — TrueForge starts fine without one but fails at session creation
+(`422 Unknown model`).
+
+Full runbook, including what the transcript should look like and the gotchas:
+[docs/trueforge.md](docs/trueforge.md).
+
+### The seven tools the agent gets
+
+| Tool | Returns |
+|---|---|
+| `colophon_gates` | All 14 gates, what each checks, and what artifact it needs first |
+| `colophon_doctor` | Whether this machine has node / ffmpeg / ffprobe |
+| `colophon_init` | A frozen run directory and the spec's SHA-256 |
+| `colophon_validate` | The 4 spec-level gates — cheap, no artifacts needed |
+| `colophon_plan` | The timeline: when every scene starts and ends |
+| `colophon_qa` | All 14 gates on an attempt |
+| `colophon_design` | The bounded repair loop, and how far it got |
+
+Every answer is `{ state, blockers, warnings, hint }`. The `hint` exists
+because of a specific way agents get this wrong: before an artifact exists,
+several gates report *"nothing to check"*, and colophon counts that as a
+blocker — correctly, since failing closed is the point. An agent that doesn't
+know this reads the blocker as a defect it caused and starts "fixing" a spec
+that was fine. The hint says out loud what a human would have inferred.
+
+None of the tools carry `@write` / `@destructive` annotations. TrueForge's
+default approval list is exactly those two, and unannotated tools are exempt —
+so the loop does not stall on permission prompts.
 
 ---
 
@@ -232,19 +309,23 @@ colophon/
   renderers/
     hyperframes/ the default renderer (HTML/CSS → MP4)
   qa/            the fourteen gates and the failure-code registry
+    pipeline.py    the gate catalog and the two canonical gate sets
   review/        frame extraction and contact sheets
   repair/        targeted, localized spec edits
   harness/       the repair loop and the render driver
   bench/         harness comparison; real agents behind an opt-in gate
   runs/          run lifecycle and manifest
+  mcp_server.py  the pipeline as MCP tools over HTTP (the harness socket)
 docs/
   architecture.md        system design
   understand.md          plain-English walkthrough — start here
   map.html               the same thing as one visual page
+  trueforge.md           running colophon inside the TrueForge harness
+  demo-script.md         shot list for the demo video
   video-spec.md          the spec contract
   roadmap.md             the gated plan and its decision rules
-  adr/                   eight architecture decision records
-examples/        six runnable specs
+  adr/                   nine architecture decision records
+examples/        runnable specs, including one deliberately broken
 scripts/         dev-time review tooling
 ```
 
@@ -252,7 +333,7 @@ scripts/         dev-time review tooling
 
 ## Design decisions
 
-Eight ADRs record *why* the system is shaped this way. Read them before
+Nine ADRs record *why* the system is shaped this way. Read them before
 proposing a change.
 
 | ADR | Decision |
@@ -265,6 +346,7 @@ proposing a change.
 | 0006 | Renderer adapter seam: emit, then render |
 | 0007 | The agent runtime is a caller, not a dependency |
 | 0008 | Explicit overlaps; no speed multiplier |
+| 0009 | Colophon runs inside an agent harness as an MCP tool server |
 
 ---
 
@@ -275,7 +357,7 @@ decision rule for every outcome is committed in advance — see
 `docs/roadmap.md`.
 
 ```
-1. METRIC        7 deterministic gates + fingerprint        done
+1. METRIC        14 deterministic gates + fingerprint       done
 2. GRAMMAR       bounded vocabulary + curated exemplars     in progress
 3. MEASURE       generate 20, score failures by category    gated on 2
 4. DECOMPOSE     add agents only at a measured failure      gated on 3
@@ -305,6 +387,88 @@ Rules that keep the guarantees intact:
   inline in a renderer.
 - Any new QA gate must be deterministic and order-independent.
 - `runs/` is derived data. It is gitignored; do not commit it.
+
+---
+
+## Demo video
+
+> **TODO — the author records this.** ~3 minutes. Full shot list, timings and
+> narration in [docs/demo-script.md](docs/demo-script.md).
+
+The shape of it, so the harness work is visible rather than asserted:
+
+| Time | What is on screen |
+|---|---|
+| 0:00–0:20 | The problem: an agent that generates a video and ships it unchecked. |
+| 0:20–0:50 | `colophon mcp serve` + `npx @truefoundry/trueforge@latest`, side by side. |
+| 0:50–2:10 | **The loop.** Live in the TrueForge chat: `colophon_validate` returns `blocked` with a named gate and code → the agent edits the spec → re-runs → `ready`. Do this twice, once for a spec-level fix and once for something it cannot fix. |
+| 2:10–2:40 | `colophon_qa` on a rendered attempt: all 14 gates, showing the ones that need a real artifact. |
+| 2:40–3:00 | Why this isn't a wrapper: the gates hold the veto; the model never does. |
+
+---
+
+## Qodo Code Review Evidence
+
+> **TODO — fill in once the PRs below are merged.** Required by the hackathon
+> rules: a link to a representative merged PR containing meaningful code, what
+> Qodo surfaced, and what was changed or dismissed with a reason.
+
+Rules 2 and 6 of the hackathon ask for substantive changes to go through
+Qodo-reviewed pull requests, and for the README to link one. The honest status
+as of this commit:
+
+* The 25 commits before this work were **direct pushes to `main`**. They cannot
+  be retro-fitted with a review trail — a Qodo comment on a commit that never
+  went through a PR is not evidence of review. They are disclosed as unreviewed.
+* Everything from here on goes through a PR. This section will name the
+  representative one.
+
+**Representative PR:** _(link)_
+
+**Branch:** _(name)_ → `main`
+
+**What Qodo surfaced, and what happened:**
+
+| Finding | Severity | Disposition |
+|---|---|---|
+| _(e.g. "broad `except Exception` at the tool boundary")_ | High | _Fixed / Dismissed — reason_ |
+| _(e.g. "duplicate gate list in three modules")_ | Medium | _Fixed / Dismissed — reason_ |
+
+**Review history:** _(link to the PR conversation showing review → decision →
+follow-up commit)_
+
+Every valid **High** finding is either fixed or dismissed with a written
+reason. **Medium** and **Low** are an engineering call, and where one is
+dismissed the reason goes in the table above rather than being quietly dropped.
+
+---
+
+## AI assistance disclosure
+
+Disclosed per the hackathon rules.
+
+Colophon was built with substantial AI assistance — an AI coding assistant
+(WorkBuddy, running Claude) wrote most of the code, under continuous human
+direction. That direction was not cosmetic:
+
+* **The architecture is human-authored.** The decision that a spec is the source
+  of truth, that gates must be deterministic and model-free, that an agent
+  runtime is a *caller* rather than a dependency, and that the taxonomy must
+  fail closed — all of it is recorded in the eight ADRs under `docs/adr/`, and
+  each one states the trade-off that was accepted.
+* **The failure modes are human-authored.** The rules about opt-in agent
+  invocation, SKIP-versus-FAIL honesty, and never silently substituting a
+  missing field came out of specific things that went wrong and were reasoned
+  about. Several are written down at the point they matter in the code.
+* **The human can explain the code.** Every module carries a plain-English
+  preamble — [docs/understand.md](docs/understand.md) is the whole system
+  explained without jargon, and [docs/map.html](docs/map.html) is the same
+  content as one page. `tests/test_docs.py` fails the build if the prose drifts
+  from the code.
+
+Where a design was learned from existing work rather than invented, it is
+credited in `THIRD_PARTY_NOTICES.md` with what was taken and how colophon
+diverges from it.
 
 ---
 
