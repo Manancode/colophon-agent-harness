@@ -15,6 +15,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, NamedTuple, Sequence
 
+from ..render.contact_sheet import (
+    MAX_FRAMES,
+    ContactSheetError,
+    build_contact_sheet as build_sheet,
+)
 from ..runtime import tools
 from ..runtime.tools import ToolError, run
 
@@ -124,53 +129,34 @@ def build_contact_sheet(
     columns: int = 3,
     tile_width: int = 640,
 ) -> Path:
-    """Tile the extracted frames into one image using ffmpeg's tile filter."""
-    ffmpeg = tools.resolve("ffmpeg")
-    out_path = Path(out_path)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
+    """Tile the extracted frames into a 2576x1456 contact sheet.
 
+    The ``columns`` and ``tile_width`` parameters are kept for backward
+    compatibility with callers that pass them; they are ignored. The
+    actual layout is decided by ``render.contact_sheet.layout_for`` so
+    every review produces the same budget-sized sheet.
+
+    If more than 12 frames were extracted, they are evenly subsampled
+    before tiling -- more frames in a fixed-budget sheet becomes unreadable,
+    and 12 is the most the budget can hold at the 28px patch size.
+    """
     if not frameset.frames:
         raise ReviewError("no frames to tile")
 
-    rows = (len(frameset.frames) + columns - 1) // columns
-    inputs: list[str] = []
-    for frame in frameset.frames:
-        inputs += ["-i", str(frame)]
+    frames = frameset.frames
+    if len(frames) > MAX_FRAMES:
+        # Evenly spaced sample that always includes the first and last
+        # frame, so a review still shows the opening and closing scenes.
+        step = (len(frames) - 1) / (MAX_FRAMES - 1)
+        frames = [frames[int(round(i * step))] for i in range(MAX_FRAMES)]
 
-    n = len(frameset.frames)
-    # ffmpeg 8.x `tile` declares a single input and tiles successive FRAMES of
-    # that stream; the multi-input form ("[a][b]tile=2x1") was removed and now
-    # fails with "More input link labels specified for filter 'tile' than it
-    # has inputs". So concat the stills into one stream, then tile that.
-    filter_complex = (
-        "".join(f"[{i}:v]scale={tile_width}:-2,setsar=1[s{i}];" for i in range(n))
-        + "".join(f"[s{i}]" for i in range(n))
-        + f"concat=n={n}:v=1:a=0[strip];"
-        + f"[strip]tile={columns}x{rows}:padding=12:color=0x0B0B0D[out]"
-    )
+    try:
+        result = build_sheet(frames, out_path)
+    except ContactSheetError as exc:
+        raise ReviewError(str(exc)) from exc
 
-    code, _, err = run(
-        [
-            str(ffmpeg.path), "-y",
-            *inputs,
-            "-filter_complex", filter_complex,
-            "-map", "[out]",
-            "-frames:v", "1",
-            "-update", "1",
-            str(out_path),
-        ],
-        timeout=600,
-    )
-    if code != 0:
-        # ffmpeg prints its banner first and the actual reason last, so the
-        # head of stderr is always useless. Show the tail, plus the command.
-        raise ReviewError(
-            "contact sheet failed:\n  "
-            + (err or "").strip()[-1500:]
-            + f"\n  command: {' '.join(str(c) for c in [ffmpeg.path, '-y', *inputs, '-filter_complex', filter_complex])}"
-        )
-    frameset.contact_sheet = out_path
-    return out_path
+    frameset.contact_sheet = result
+    return result
 
 
 def luma_stats_at(video: str | Path, timestamps: Sequence[float]) -> list[LumaStats]:
