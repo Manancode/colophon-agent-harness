@@ -13,6 +13,7 @@ from ...runtime import tools
 from ...runtime.tools import ToolError, run
 from ...spec.schema import VideoSpec
 from ...timeline.plan import TimelinePlan
+from ..pipeline import NEEDS_VIDEO, gate_needs
 from ..runner import StageResult
 
 #: How far the rendered duration may drift from the planned one. A second is
@@ -21,6 +22,10 @@ from ..runner import StageResult
 DURATION_TOLERANCE_S = 1.0
 
 
+# Declared, not derived: `video_path` has a default here, so a signature-only
+# reading cannot tell whether it is optional. It is not — the gate returns
+# "no video" and stops without it. See `gate_needs` for the other case.
+@gate_needs(NEEDS_VIDEO)
 def media_contract(
     spec: VideoSpec,
     plan: TimelinePlan,

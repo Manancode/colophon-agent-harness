@@ -1,0 +1,78 @@
+{
+  "assets": [],
+  "brand": {
+    "name": "Testco",
+    "tokens": {
+      "accent": "#4F8CFF",
+      "bg": "#0B0B12",
+      "fg": "#F5F5F7"
+    },
+    "voice": {}
+  },
+  "canvas": {
+    "background": "#0B0B12",
+    "fps": 30,
+    "height": 1080,
+    "width": 1920
+  },
+  "claims": [
+    {
+      "claim_id": "t1",
+      "kind": "title",
+      "source": "brief#positioning",
+      "text": "Ship faster"
+    },
+    {
+      "claim_id": "n1",
+      "kind": "narration",
+      "source": "brief#problem",
+      "text": "Teams ship faster, with fewer regressions."
+    },
+    {
+      "claim_id": "t2",
+      "kind": "title",
+      "source": "brief#audience",
+      "text": "Built for engineers"
+    },
+    {
+      "claim_id": "n2",
+      "kind": "narration",
+      "source": "brief#capability",
+      "text": "Every run is hashed, every attempt is reproducible."
+    }
+  ],
+  "notes": "Deliberately broken copy of two-scene.json: scene s2 has a non-positive duration. The spec-level gates block on it and the design loop repairs it mechanically. Hand this to an agent to give it something real to fix.",
+  "scenes": [
+    {
+      "asset_ids": [],
+      "duration_s": 3.0,
+      "narration_claim_id": "n1",
+      "renderer_hints": {},
+      "role": "hook",
+      "scene_id": "s1",
+      "title_claim_id": "t1",
+      "treatment": "hero-centered",
+      "treatment_params": {}
+    },
+    {
+      "asset_ids": [],
+      "duration_s": 0,
+      "narration_claim_id": "n2",
+      "renderer_hints": {},
+      "role": "capability",
+      "scene_id": "s2",
+      "title_claim_id": "t2",
+      "treatment": "feature-rows",
+      "treatment_params": {}
+    }
+  ],
+  "spec_id": "broken-duration",
+  "spec_version": "0.1",
+  "timeline": {
+    "overlap_s": 0.0,
+    "policy": "adjacent",
+    "transition": "cut",
+    "transition_ms": 0
+  },
+  "title": "Two scene launch (deliberately broken)"
+}

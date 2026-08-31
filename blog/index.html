@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>colophon: a deterministic video-qa agent that runs inside trueforge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#1c1c1e; --muted:#6b7280; --line:#e8eaed; --bg:#ffffff; --soft:#f6f7f8; --codebg:#111317; }
+  *{box-sizing:border-box}
+  html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.72;font-size:19px;font-weight:400}
+  .wrap{max-width:720px;margin:0 auto;padding:40px 24px 90px}
+  .crumb{font-size:14px;color:var(--muted);text-decoration:none;font-weight:500}
+  .crumb:hover{color:var(--ink)}
+  h1{font-size:38px;line-height:1.2;letter-spacing:-.01em;font-weight:700;margin:16px 0 8px}
+  .byline{font-size:14.5px;color:var(--muted);margin:0 0 8px}
+  h2{font-size:24px;line-height:1.28;letter-spacing:-.01em;font-weight:700;margin:46px 0 4px}
+  h3{font-size:19px;font-weight:600;margin:26px 0 2px}
+  p{margin:15px 0}
+  a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line)}
+  a:hover{border-color:var(--ink)}
+  code{background:var(--soft);padding:2px 6px;border-radius:5px;font-size:15px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  pre{background:var(--codebg);color:#e6edf3;padding:16px 18px;border-radius:12px;overflow:auto;
+    font-size:13.5px;line-height:1.55;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  pre code{background:none;padding:0;color:inherit;font-size:inherit}
+  .callout{background:var(--soft);border-left:3px solid var(--ink);padding:14px 18px;border-radius:0 10px 10px 0;margin:22px 0;font-size:17px}
+  figure.fig{margin:28px 0}
+  figure.fig img{width:100%;height:auto;display:block;background:#fff;border:1px solid var(--line);border-radius:12px}
+  figcaption{margin-top:10px;font-size:13.5px;color:var(--muted);line-height:1.5}
+  table{border-collapse:collapse;width:100%;margin:22px 0;font-size:16px}
+  th,td{border:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}
+  th{background:var(--soft);font-weight:600}
+  td:first-child{color:var(--muted)}
+  ul{margin:14px 0;padding-left:22px} li{margin:8px 0}
+  hr{border:none;border-top:1px solid var(--line);margin:40px 0}
+  footer{border-top:1px solid var(--line);margin-top:60px;padding-top:22px;color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="crumb" href="https://manancode.github.io/colophon-agent-harness/">&larr; all posts</a>
+
+  <h1>colophon: a deterministic video-qa agent that runs inside trueforge</h1>
+  <p class="byline">colophon team · august 2026 · built on trueforge · apache-2.0</p>
+
+  <p>
+    an agent can write a video plan in seconds. what it still cannot tell you is whether that plan will
+    <em>look good</em>. that gap is the whole job, and for a launch video it is the difference between
+    shipping and embarrassment.
+  </p>
+  <p>
+    we built colophon to close that gap without pretending a model can judge taste. the trick is to stop
+    asking <em>is this good?</em> and start asking <em>does this spec violate a rule we can name?</em>
+    colophon enforces a closed motion vocabulary and runs fourteen deterministic gates that make zero model
+    calls. it runs inside trueforge as an mcp tool server, so an agent can use it without us ever trusting
+    the model to be the critic.
+  </p>
+
+  <h2>the gap we kept hitting</h2>
+  <p>
+    the failure mode is always the same. the agent produces a 90-second render. someone watches it and says
+    it feels cheap, but cannot say why. the defects are real and mechanical: a scene that is
+    <code>0.2s</code> long, text that overflows its box, a colour that is not the brand colour, a claim with
+    no source behind it. none of these are a matter of opinion. all of them are checkable by a computer.
+  </p>
+  <table>
+    <tr><th>without colophon</th><th>with colophon</th></tr>
+    <tr><td>agent ships the render unchecked</td><td>agent must clear 14 named gates first</td></tr>
+    <tr><td>does it look good? becomes a model guess</td><td>gate returns a code and a fix, not a vibe</td></tr>
+    <tr><td>defect found by a human after publish</td><td>defect located and blocked before launch</td></tr>
+    <tr><td>taste is a feeling re-litigated every render</td><td>taste is a parameter, set once</td></tr>
+  </table>
+
+  <h2>lint the spec, not the pixel</h2>
+  <p>
+    one constraint explains almost everything we built: <strong>you cannot lint a pixel, but you can lint a
+    spec.</strong> so we never let the agent author from nothing. we give it a <em>closed motion vocabulary</em>,
+    a finite set of moves, each with explicit parameters. once motion is a number (<code>400ms</code>,
+    <code>60ms</code> stagger, scale <code>1.05</code>), taste becomes a parameter you can set, version, and
+    enforce. a verdict becomes <em>located</em> instead of <em>interpreted</em>: the pulse feels cheap maps
+    onto one of three dials, vocabulary, parameters, or precondition, and a single edit makes it true for
+    every future video.
+  </p>
+  <div class="callout">
+    <span class="tag">principle</span> our job is not to read the corpus. it is to <b>smelt it into enums</b>.
+    a blog post is read once; a schema enum is applied a million times.
+  </div>
+
+  <figure class="fig">
+    <img src="images/pipeline.svg" alt="the colophon pipeline from brief and brand, through canonical spec, editable project, render, deterministic qa, and review plus repair" />
+    <figcaption>fig 1. the colophon pipeline. the spec is the source of truth, and every gate fails closed with a named code.</figcaption>
+  </figure>
+
+  <h2>run the gates as a tool, not a wrapper</h2>
+  <p>
+    colophon is an instrument, not an employee. it reports what is wrong with a spec; it does not decide what
+    to do about it. <strong>trueforge</strong> is the environment the agent works inside, the loop, the tool
+    calling, the sandbox, the approvals. so colophon runs <em>inside</em> trueforge as an mcp tool server, and
+    the agent does the actual work of reading a report and acting on it.
+  </p>
+  <p>
+    the crucial difference from a wrapper: the agent is <em>not</em> asking a model is this video good? on
+    boundary defects that is close to a coin flip. it calls a deterministic instrument, reads a precise answer
+    that names the gate and the failure code, and acts. <strong>trueforge supplies the loop; colophon supplies
+    the ground truth.</strong>
+  </p>
+
+  <figure class="fig">
+    <img src="images/inside-trueforge.svg" alt="colophon running inside the trueforge harness: the agent calls colophon validate, receives a verdict, edits the spec, and re-runs the gate" />
+    <figcaption>fig 2. colophon inside trueforge. the agent calls colophon_validate, reads the verdict, edits the spec, and re-runs the gate.</figcaption>
+  </figure>
+
+  <h2>a loop you can watch</h2>
+  <p>
+    in a trueforge session the agent calls <code>colophon_validate</code> and gets back a precise, named
+    verdict, never a vague opinion. here is a real shape of the answer:
+  </p>
+  <pre><code>{
+  "gate": "spec.timing.min_scene_ms",
+  "state": "blocked",
+  "blockers": ["scene 'hook' is 0.2s (< 400ms minimum)"],
+  "warnings": [],
+  "hint": "A scene this short reads as a flash; raise to >=400ms or merge into the next scene."
+}</code></pre>
+  <p>
+    the agent reads the blocker, edits the spec, and re-runs the gate. when the named defect is gone, the gate
+    returns <code>ready</code>. that is the entire interaction: a loop of <em>name the failure, fix the cause,
+    re-check</em>, with no human in the middle guessing.
+  </p>
+
+  <h2>why the gates hold the veto</h2>
+  <p>
+    a wrapper puts the model in charge and treats the checker as a suggestion. we did the opposite. when a spec
+    is not ready, a gate says <code>blocked</code> with a specific code, and the agent's only move is to fix the
+    underlying cause. this is also why the system is demoable with <strong>zero api keys</strong>: trueforge runs
+    standalone, and colophon's gates make no model calls at all. the ground truth is free; only the agent that
+    acts on it needs a model.
+  </p>
+
+  <h2>honesty by design</h2>
+  <p>three rules keep the system trustworthy. each has a named failure mode and a fix.</p>
+  <ul>
+    <li><b>no model calls in the gates.</b> a verdict is computed, not guessed. <i>failure:</i> a gate that
+      asks the model if it looks fine. <i>fix:</i> delete the call; if it cannot be computed, it is a blocker.</li>
+    <li><b>the taxonomy fails closed.</b> if a gate cannot check something because the artifact does not exist yet,
+      that is a blocker, not a pass. <i>failure:</i> returning ok on missing input. <i>fix:</i> count missing
+      prerequisites as blocked.</li>
+    <li><b>independent review builds a contact sheet.</b> <code>colophon review</code> extracts frames a human
+      signs off on. <i>failure:</i> shipping on the instrument's word alone. <i>fix:</i> require a human verdict
+      on the contact sheet before launch.</li>
+  </ul>
+
+  <hr/>
+
+  <h2>what is actually under the hood</h2>
+  <ul>
+    <li><b>fourteen deterministic gates.</b> spec-level gates (vocabulary, parameters, preconditions, source
+      grounding) run before any artifact exists; artifact-level gates (timing, overflow, contrast, brand-colour
+      compliance, claim support) run after render. every gate returns <code>{ state, blockers, warnings, hint }</code>.</li>
+    <li><b>a canonical spec.</b> the spec is the source of truth, a closed vocabulary of moves with explicit
+      parameters. you lint the spec, not the pixels.</li>
+    <li><b>a bounded repair loop</b> (<code>colophon design</code>). headless, no agent, no api key: it
+      localizes a failure to one of three dials and applies a targeted spec edit, then re-runs. fails closed.</li>
+    <li><b>a reproducible fingerprint.</b> every render records the spec hash, each qa stage, and the resolved
+      runtime into <code>delivery-report.json</code>, so a result replays instead of being admired.</li>
+    <li><b>why an instrument beats a model opinion.</b> on boundary-defect judgement, models score f1 11 to 42
+      (ui-lens, cvpr 2026), close to a coin flip. colophon returns a named gate and a failure code, not a vibe.</li>
+    <li><b>ten adrs.</b> the trades are written down: fail-closed taxonomy, opt-in agent invocation,
+      skip-versus-fail honesty, never silently substituting a missing field. <code>tests/test_docs.py</code>
+      fails the build if the prose drifts from the code.</li>
+    <li><b>demoable with zero keys.</b> trueforge runs standalone; the gates make no model calls.
+      <code>colophon deliver</code> runs end-to-end from the cli.</li>
+  </ul>
+
+  <h3>run it</h3>
+  <pre><code># serve colophon's gates as mcp tools
+colophon mcp serve --host 127.0.0.1 --port 8000
+
+# in another terminal, start the harness (no signup, local sandbox)
+npx @truefoundry/trueforge@latest        # listens on :8790
+
+# or run the whole pipeline headlessly, no agent, no key
+python3 -m colophon.cli deliver runs/cadence-01 --review</code></pre>
+  <p>in trueforge: <b>settings, mcp servers, add</b>. type <code>remote</code>, url
+    <code>http://127.0.0.1:8000/mcp</code>. then watch the agent call <code>colophon_validate</code>, hit a
+    named blocker, edit the spec, and re-run until it is <code>ready</code>.</p>
+
+  <h2>where this goes</h2>
+  <p>
+    the roadmap is to keep converting taste into checkable parameters: additional closed vocabularies for new
+    artifact types, and gates that localize feels cheap to a precise, fixable dial. the human taste call stays
+    human; colophon's job is to make it the <em>only</em> thing left to argue about.
+  </p>
+
+  <footer>
+    colophon is apache-2.0 and built on <a href="https://github.com/truefoundry/trueforge">trueforge</a>.
+    source: <a href="https://github.com/Manancode/colophon-agent-harness">github.com/manancode/colophon-agent-harness</a>.
+  </footer>
+</div>
+</body>
+</html>

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "colophon"
 version = "0.1.0"
-description = "Spec-first video generation with machine-checkable taste: a closed motion grammar, seven deterministic QA gates, and a reproducible fingerprint for every render."
+description = "Spec-first video generation with machine-checkable taste: a closed motion grammar, fourteen deterministic QA gates, and a reproducible fingerprint for every render. Runs as an MCP tool server inside an agent harness."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"
@@ -24,7 +24,6 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -32,6 +31,12 @@ classifiers = [
     "Topic :: Multimedia :: Video",
     "Topic :: Software Development :: Quality Assurance",
 ]
+# No "License :: OSI Approved :: ..." classifier here on purpose. Modern
+# setuptools rejects it alongside an SPDX `license` expression — with both
+# present, `pip install -e .` fails outright:
+#   InvalidConfigError: License classifiers have been superseded by license
+#   expressions. Please remove: License :: OSI Approved :: Apache Software License
+# The `license` field above is the SPDX expression; it is the current spelling.
 
 # The core package is pure standard library by design. Nothing you depend on
 # can change the bytes your renderer emits. Pillow is needed only for the
@@ -47,6 +52,18 @@ Issues = "https://github.com/Manancode/colophon-agent-harness/issues"
 dev = [
     "pytest>=7.0",
     "pillow>=10.0",
+]
+# Optional, and only for `colophon mcp serve`. The core pipeline stays pure
+# standard library: nothing a caller depends on may change the bytes the
+# renderer emits.
+# `mcp` is capped below 2 on purpose. fastmcp 2.14 imports `McpError` from
+# `mcp.shared.exceptions`; mcp 2.x renamed that symbol to `MCPError`, so an
+# unpinned install resolves to a combination that fails at import time with
+# "cannot import name 'McpError'". Nothing in colophon itself needs 2.x.
+# Loosen this when fastmcp ships a release that supports it.
+mcp = [
+    "mcp>=1.10,<2",
+    "fastmcp>=2.10",
 ]
 
 [project.scripts]
