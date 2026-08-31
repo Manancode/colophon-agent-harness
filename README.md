@@ -12,7 +12,7 @@ sentence on screen claiming something your own website never said.
 you find out after you post it.
 
 colophon is the thing you run before you post. it is a fixed checklist of
-fourteen things that must be true about a video, and it will not let the video
+fourteen deterministic gates that must be true about a video, and it will not let the video
 through until every one of them passes. when something is wrong it does not say
 this feels off. it says: this scene is 0.2 seconds long, the minimum is 0.4
 seconds, change it here.
