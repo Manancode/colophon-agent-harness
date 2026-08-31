@@ -104,6 +104,21 @@ colophon mcp serve --host 127.0.0.1 --port 8000
 Leave it running. You should see the server bind on port 8000. It exposes the
 MCP endpoint at `http://127.0.0.1:8000/mcp`.
 
+By default the server binds to **loopback only** and needs no token, because
+nothing off-machine can reach the port. Two things are confined before any
+tool runs, and both matter for a server an agent can call:
+
+* **Every path a tool is handed is contained to a root.** Pass `--root
+  <dir>`, or set `COLOPHON_ROOT` — tools refuse to read or write anything
+  outside it, so a client cannot use this process to touch another project or
+  `/etc`. Defaults to the current directory.
+* **A non-loopback bind requires a token.** Binding to `0.0.0.0` (or any
+  LAN address) is refused unless you pass `--token <secret>` or set
+  `COLOPHON_MCP_TOKEN`. These tools write files and run a renderer, so an open
+  port is not a read-only surface — a token is how the server tells callers
+  apart. A token it cannot enforce stops the server rather than starting it
+  unprotected.
+
 Quick check that it is alive:
 
 ```bash

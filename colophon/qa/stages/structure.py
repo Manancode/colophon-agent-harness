@@ -29,6 +29,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from ..css import keyframes_blocks
+from ..pipeline import NEEDS_PROJECT, gate_needs
 from ..runner import StageResult
 
 #: What each motion animates. A motion whose target is absent is not a
@@ -122,6 +123,7 @@ def _scene_background(fragment: str) -> float | None:
 # --------------------------------------------------------------------------
 
 
+@gate_needs(NEEDS_PROJECT)
 def scene_structure(
     spec: Any = None,
     plan: Any | None = None,
