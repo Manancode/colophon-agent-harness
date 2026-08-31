@@ -36,8 +36,14 @@ approval list is ``["@write", "@destructive"]`` and *unannotated tools are
 exempt* from prompting, so leaving them unannotated keeps an agent from
 stalling on a permission prompt mid-loop. The tools that really do write
 (``colophon_init``, ``colophon_plan``, ``colophon_qa``, ``colophon_design``)
-are documented as writing in their descriptions instead — and constrained to
-the run directory the caller names.
+are documented as writing in their descriptions instead.
+
+That exemption is exactly why the paths need containing here rather than at
+the prompt: an exempt tool is one no human is asked about, so nothing stands
+between a caller naming ``/etc`` and this process writing there. Every path a
+tool accepts is therefore confined to a root configured when the server
+starts — see :mod:`colophon.sandbox`. Used as a library, with no root
+configured, nothing is confined; there is no deputy to confuse.
 
 Shape of every answer
 =====================
@@ -66,12 +72,14 @@ import json
 from pathlib import Path
 from typing import Any, Callable
 
+from . import sandbox
 from .harness import designer as harness_designer
 from .presentation.normalize import normalize
 from .qa import pipeline as qa_pipeline
 from .qa import taxonomy as taxonomy
 from .qa.runner import run_stages
 from .runs import layout as run_layout
+from .runs import manifest as run_manifest
 from .runtime import tools
 from .spec.hash import spec_sha256
 from .spec.io import load as load_spec
@@ -84,6 +92,10 @@ DEFAULT_RENDERER = "hyperframes"
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
 DEFAULT_PATH = "/mcp"
+
+#: Environment variable holding the bearer token clients must present. Needed
+#: to bind anywhere but loopback, and honoured on loopback too when set.
+TOKEN_ENV = "COLOPHON_MCP_TOKEN"
 
 #: A finding message longer than this is truncated. Gate messages are meant to
 #: be read by an agent with a context budget, and the tail is rarely the part
@@ -265,9 +277,9 @@ def init_run(spec_path: str, run_dir: str) -> dict[str, Any]:
     gates will actually be reading — not necessarily byte-identical to the file
     you passed in.
     """
-    spec = load_spec(spec_path)
+    spec = load_spec(sandbox.within(spec_path, label="spec_path"))
     spec, log = normalize(spec)
-    paths = run_layout.init_run(run_dir, spec)
+    paths = run_layout.init_run(sandbox.within(run_dir, label="run_dir"), spec)
     write_json(
         {"tools": {k: v.to_dict() for k, v in tools.resolve_runtime().items()}},
         paths.runtime_state,
@@ -286,7 +298,7 @@ def init_run(spec_path: str, run_dir: str) -> dict[str, Any]:
 
 def validate(run_dir: str) -> dict[str, Any]:
     """Run the four spec-level gates. Needs no emitted project and no video."""
-    paths = run_layout.run_paths(run_dir)
+    paths = run_layout.run_paths(sandbox.within(run_dir, label="run_dir"))
     if not paths.spec.is_file():
         raise FileNotFoundError(f"no spec at {paths.spec}; run colophon_init first")
     spec = load_spec(paths.spec)
@@ -305,7 +317,7 @@ def validate(run_dir: str) -> dict[str, Any]:
 
 def plan(run_dir: str) -> dict[str, Any]:
     """Lay the scenes onto the clock and write plan.json (writes to the run)."""
-    paths = run_layout.run_paths(run_dir)
+    paths = run_layout.run_paths(sandbox.within(run_dir, label="run_dir"))
     if not paths.spec.is_file():
         raise FileNotFoundError(f"no spec at {paths.spec}; run colophon_init first")
     spec = load_spec(paths.spec)
@@ -335,18 +347,28 @@ def qa(run_dir: str, attempt: int | None = None) -> dict[str, Any]:
 
     Gates that need an artifact report 'nothing to check' — a blocker — when
     the artifact is missing. Emit and render before reading those as defects.
+
+    With no attempt named, this picks the newest attempt that was actually
+    emitted from the run's current spec. An attempt left over from an older
+    spec is refused rather than evaluated: its video was made by something
+    else, and a report carrying today's hash would describe a video that hash
+    never produced. ``attempt_provenance`` in the answer says which case it
+    was — ``matches``, or ``empty`` for an attempt that has nothing in it yet.
     """
-    paths = run_layout.run_paths(run_dir)
+    paths = run_layout.run_paths(sandbox.within(run_dir, label="run_dir"))
     if not paths.spec.is_file():
         raise FileNotFoundError(f"no spec at {paths.spec}; run colophon_init first")
     spec = load_spec(paths.spec)
     normalized, built, _ = _plan_for(spec)
 
-    number = attempt or run_layout.latest_attempt(paths)
-    if number is None:
-        raise FileNotFoundError(
-            f"no attempts in {run_dir}; emit a project first, then run this again"
-        )
+    # Choose the attempt *before* creating anything. begin_attempt() makes the
+    # directory, so picking first also keeps a refused run from leaving an
+    # empty attempt behind as evidence that something happened.
+    expected = spec_sha256(normalized)
+    number = run_manifest.evaluable_attempt(paths, expected, attempt)
+    provenance = run_manifest.attempt_provenance(
+        run_layout.attempt_paths(paths, number), expected
+    )
     att = run_layout.begin_attempt(paths, number)
 
     document_path = att.project / "index.html"
@@ -392,7 +414,12 @@ def qa(run_dir: str, attempt: int | None = None) -> dict[str, Any]:
         },
         att.qa / "qa-report.json",
     )
-    return {"ok": True, "attempt": number, **verdict}
+    return {
+        "ok": True,
+        "attempt": number,
+        "attempt_provenance": provenance,
+        **verdict,
+    }
 
 
 def design(
@@ -409,7 +436,12 @@ def design(
     durations — and stops in the ``blocked`` state for anything that needs
     judgment. It never silently ships a broken spec.
     """
-    spec = load_spec(spec_path)
+    spec = load_spec(sandbox.within(spec_path, label="spec_path"))
+    # `workspace` is where a render is allowed to put files, and `out_dir` is
+    # where the designed spec is written. Both come from the client, so both
+    # are confined the same way — a workspace is not a promise that the paths
+    # inside it are trustworthy.
+    safe_workspace = sandbox.within_optional(workspace, label="workspace")
     settings = harness_designer.DesignerSettings(
         max_turns=max_turns,
         default_scene_duration_s=harness_designer.DEFAULT_SCENE_DURATION_S,
@@ -419,18 +451,19 @@ def design(
         from .harness import orchestrator as harness_orchestrator
 
         driver = harness_orchestrator.make_runtime_driver(
-            renderer=renderer, workspace=workspace
+            renderer=renderer,
+            workspace=None if safe_workspace is None else str(safe_workspace),
         )
     session = harness_designer.run_design_loop(
         spec,
         settings=settings,
         driver=driver,
-        workspace=workspace,
+        workspace=None if safe_workspace is None else str(safe_workspace),
     )
 
     written: dict[str, str] = {}
     if out_dir:
-        out = Path(out_dir)
+        out = sandbox.within(out_dir, label="out_dir")
         out.mkdir(parents=True, exist_ok=True)
         save_spec(session.final_spec, out / "spec.designed.json")
         write_json(session.to_dict(), out / "design-session.json")
@@ -586,7 +619,46 @@ def _register_tool(
     server.add_tool(fn, name=name, description=description)
 
 
-def build_server() -> Any:
+def is_loopback(host: str) -> bool:
+    """Whether ``host`` can only be reached from this machine.
+
+    ``localhost`` resolves through the host's own resolver, so it is treated
+    as loopback only if it actually resolves to one — a machine configured to
+    resolve it elsewhere is a machine we should not be trusting.
+    """
+    import ipaddress
+    import socket
+
+    if host in ("localhost", ""):
+        try:
+            resolved = {info[4][0] for info in socket.getaddrinfo(host or "localhost", None)}
+        except OSError:
+            return False
+        return bool(resolved) and all(
+            ipaddress.ip_address(addr).is_loopback for addr in resolved
+        )
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        # A name we cannot parse as an address might resolve anywhere.
+        return False
+
+
+def build_auth(token: str) -> Any:
+    """A verifier that accepts exactly one bearer token.
+
+    Raises if fastmcp cannot provide one. The caller must treat that as
+    fatal: a server that cannot check a token must not bind remotely, and
+    silently starting anyway is the vulnerability this exists to close.
+    """
+    from fastmcp.server.auth.providers.jwt import StaticTokenVerifier
+
+    return StaticTokenVerifier(
+        tokens={token: {"client_id": "colophon", "scopes": []}}
+    )
+
+
+def build_server(token: str | None = None) -> Any:
     """Build the MCP server. Requires the optional ``mcp`` dependency."""
     try:
         from fastmcp import FastMCP
@@ -595,7 +667,8 @@ def build_server() -> Any:
             "the MCP server needs the optional dependency: pip install '.[mcp]'"
         ) from exc
 
-    server = FastMCP("colophon", instructions=INSTRUCTIONS)
+    auth = build_auth(token) if token else None
+    server = FastMCP("colophon", instructions=INSTRUCTIONS, auth=auth)
     for fn, name, description in TOOLS:
         _register_tool(server, guarded(fn), name, description)
     return server
@@ -605,9 +678,58 @@ def serve(
     host: str = DEFAULT_HOST,
     port: int = DEFAULT_PORT,
     path: str = DEFAULT_PATH,
+    root: str | Path | None = None,
+    token: str | None = None,
 ) -> None:
-    """Run the HTTP MCP server until interrupted."""
-    server = build_server()
+    """Run the HTTP MCP server until interrupted.
+
+    Configures the filesystem root before anything can be called. Every path a
+    tool is handed must resolve inside it, which is what keeps a client from
+    using this process to write wherever it likes. The root is printed on
+    startup because a silent sandbox is a sandbox nobody can check.
+
+    Binding anywhere other than loopback requires a token. These tools write
+    files and run a renderer, so an open port is not a read-only surface —
+    and without a client to check, "who called this?" has no answer. The
+    default host is loopback, which is the case that needs no token at all.
+    """
+    import os
+    import sys
+
+    sandbox.configure(root)
+    token = token or os.environ.get(TOKEN_ENV) or None
+
+    if not is_loopback(host) and not token:
+        raise SystemExit(
+            f"refusing to bind {host} without a token: these tools write to "
+            f"disk and run a renderer, so anyone who can reach this port can "
+            f"use it. Pass --token, or set {TOKEN_ENV}, or bind to "
+            f"{DEFAULT_HOST}."
+        )
+
+    try:
+        server = build_server(token=token)
+    except (ImportError, TypeError) as exc:
+        # Fail closed. An auth provider we could not build is not a detail to
+        # warn about and carry on from — the server would be open.
+        raise SystemExit(
+            f"could not enable token auth ({exc}); refusing to start. Use an "
+            f"older fastmcp that supports StaticTokenVerifier, or bind to "
+            f"{DEFAULT_HOST}."
+        ) from exc
+
+    if token:
+        print(
+            f"colophon mcp server on {host}:{port}{path} — root "
+            f"{sandbox.root()}, token auth enabled",
+            file=sys.stderr,
+        )
+    else:
+        print(
+            f"colophon mcp server on {host}:{port}{path} — root "
+            f"{sandbox.root()}, loopback only, no auth",
+            file=sys.stderr,
+        )
     server.run(transport="streamable-http", host=host, port=port, path=path)
 
 
@@ -621,10 +743,32 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--host", default=DEFAULT_HOST)
     p.add_argument("--port", type=int, default=DEFAULT_PORT)
     p.add_argument("--path", default=DEFAULT_PATH)
+    p.add_argument(
+        "--root",
+        default=None,
+        help=(
+            "directory every tool path is confined to. Defaults to "
+            f"${sandbox.ROOT_ENV} if set, else the current directory."
+        ),
+    )
+    p.add_argument(
+        "--token",
+        default=None,
+        help=(
+            "bearer token clients must present. Required to bind anywhere but "
+            f"loopback. Defaults to ${TOKEN_ENV} if set."
+        ),
+    )
 
     args = parser.parse_args(argv)
     if args.command == "serve":
-        serve(host=args.host, port=args.port, path=args.path)
+        serve(
+            host=args.host,
+            port=args.port,
+            path=args.path,
+            root=args.root,
+            token=args.token,
+        )
         return 0
     return 1
 

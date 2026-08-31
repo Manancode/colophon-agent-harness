@@ -17,7 +17,7 @@ cd /Users/piedpiper/colophon
 source .venv/bin/activate
 
 # terminal 1
-colophon mcp serve --host 127.0.0.1 --port 8000
+colophon mcp serve --host 127.0.0.1 --port 8000 --root ./runs
 
 # terminal 2
 npx @truefoundry/trueforge@latest
@@ -28,6 +28,11 @@ Add → type `remote`). Add a model provider.
 
 Open the broken spec so it is visible in an editor pane:
 `examples/broken-duration.json`.
+
+> The server in terminal 1 binds to loopback with no token. To expose it to
+> another machine, add `--token <secret>` (or set `COLOPHON_MCP_TOKEN`) — and
+> every run is confined to the `--root ./runs` directory, so the agent cannot
+> write outside it.
 
 ---
 

@@ -103,6 +103,25 @@ def _plan_for(spec: VideoSpec):
     return normalized_spec, plan, log
 
 
+def _evaluable_attempt(paths, spec: VideoSpec, number: int | None) -> int | None:
+    """The attempt an evaluation command may honestly report on, or None.
+
+    Shared by ``qa``, ``review`` and ``record-review`` so all three refuse a
+    stale attempt the same way, rather than each command growing its own idea
+    of "latest". An attempt emitted from an older spec is not a candidate:
+    its project and video were made by something else, and a report carrying
+    today's hash would describe artifacts that hash never produced.
+
+    Returns ``None`` having printed the reason, which is the same contract the
+    callers already use for "nothing to do, fail".
+    """
+    try:
+        return run_manifest.evaluable_attempt(paths, spec_sha256(spec), number)
+    except (FileNotFoundError, run_manifest.StaleArtifactError) as exc:
+        _fail(str(exc))
+        return None
+
+
 # --------------------------------------------------------------------------
 # commands
 # --------------------------------------------------------------------------
@@ -136,7 +155,10 @@ def cmd_doctor(args: argparse.Namespace) -> int:
 def cmd_init(args: argparse.Namespace) -> int:
     spec = load_spec(args.spec)
     spec, log = normalize(spec)
-    paths = run_layout.init_run(args.run_dir, spec)
+    try:
+        paths = run_layout.init_run(args.run_dir, spec)
+    except FileExistsError as exc:
+        return _fail(str(exc))
     _log(f"Run initialised at {paths.root}")
     _log(f"  spec sha256 {spec_sha256(spec)}")
     _log(f"  {len(spec.scenes)} scenes, {len(spec.claims)} claims")
@@ -245,9 +267,9 @@ def cmd_qa(args: argparse.Namespace) -> int:
     paths = run_layout.run_paths(args.run_dir)
     spec = load_spec(paths.spec)
     spec, plan, _ = _plan_for(spec)
-    number = args.attempt or run_layout.latest_attempt(paths)
+    number = _evaluable_attempt(paths, spec, args.attempt)
     if number is None:
-        return _fail("no attempts to check")
+        return 1
     attempt = run_layout.begin_attempt(paths, number)
 
     document = (attempt.project / "index.html").read_text(encoding="utf-8") if (
@@ -307,9 +329,9 @@ def cmd_review(args: argparse.Namespace) -> int:
     paths = run_layout.run_paths(args.run_dir)
     spec = load_spec(paths.spec)
     spec, plan, _ = _plan_for(spec)
-    number = args.attempt or run_layout.latest_attempt(paths)
+    number = _evaluable_attempt(paths, spec, args.attempt)
     if number is None:
-        return _fail("no attempts to review")
+        return 1
     attempt = run_layout.begin_attempt(paths, number)
     video = attempt.artifact / "launch-video.mp4"
     if not video.is_file():
@@ -402,9 +424,13 @@ def _assessment_from_qa_report(report: dict) -> Assessment:
 def cmd_record_review(args: argparse.Namespace) -> int:
     """Validate an independent review and merge it with the deterministic verdict."""
     paths = run_layout.run_paths(args.run_dir)
-    number = args.attempt or run_layout.latest_attempt(paths)
+    if not paths.spec.is_file():
+        return _fail(f"no spec at {paths.spec}; run `colophon init` first")
+    spec = load_spec(paths.spec)
+    spec, _, _ = _plan_for(spec)
+    number = _evaluable_attempt(paths, spec, args.attempt)
     if number is None:
-        return _fail("no attempts to review")
+        return 1
     attempt = run_layout.begin_attempt(paths, number)
 
     context_path = attempt.review / "review-context.json"
@@ -718,7 +744,12 @@ def cmd_mcp(args: argparse.Namespace) -> int:
     """
     from .mcp_server import main as mcp_main
 
-    return mcp_main(["serve", "--host", args.host, "--port", str(args.port)])
+    cmd = ["serve", "--host", args.host, "--port", str(args.port)]
+    if args.root:
+        cmd += ["--root", args.root]
+    if args.token:
+        cmd += ["--token", args.token]
+    return mcp_main(cmd)
 
 
 def cmd_resume(args: argparse.Namespace) -> int:
@@ -876,6 +907,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     s.add_argument(
         "--port", type=int, default=mcp_server.DEFAULT_PORT, help="port to listen on"
+    )
+    s.add_argument(
+        "--root",
+        default=None,
+        help=f"directory every tool path is confined to (defaults to ${mcp_server.sandbox.ROOT_ENV})",
+    )
+    s.add_argument(
+        "--token",
+        default=None,
+        help=f"bearer token clients must present; required to bind beyond loopback (defaults to ${mcp_server.TOKEN_ENV})",
     )
     p.set_defaults(func=cmd_mcp)
 

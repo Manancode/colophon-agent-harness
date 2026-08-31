@@ -32,6 +32,10 @@ The classification is **derived, not written down**: it reads each gate's own
 parameter list (see :func:`needs_for`). When a gate grows a ``video_path``
 parameter it becomes a video-tier gate with no edit here. A hand-maintained
 table is a table that goes stale; this one cannot.
+
+The one thing a signature cannot express is the difference between *accepting*
+an artifact and *needing* it, so a gate in that position declares its own tier
+with :func:`needs`. The declaration lives on the gate, not in a table here.
 """
 
 from __future__ import annotations
@@ -103,15 +107,54 @@ def _first_line(text: str | None) -> str:
     return ""
 
 
+#: The attribute a gate sets to override its derived tier.
+NEEDS_ATTRIBUTE = "colophon_needs"
+
+
+def gate_needs(tier: str) -> Callable[[Any], Any]:
+    """Declare the cheapest artifact a gate needs, when the signature overstates it.
+
+    :func:`needs_for` reads a gate's parameters, which is right for every gate
+    that *requires* what it names. It is wrong for a gate that merely accepts
+    something, and the signature cannot tell the two apart:
+
+    * ``media_contract`` returns "no video; run render first" and stops. It
+      cannot say anything without the MP4, so it is genuinely video-tier.
+    * ``scene_structure`` uses the video for one extra check and does real
+      work without it. Calling it video-tier tells an agent it must render
+      before this gate can speak — which is false, and which sends the agent
+      off to render when it could have learned about a zero-duration scene or
+      a missing asset straight from the plan.
+
+    The declaration sits on the function, next to the parameter list it is
+    correcting, rather than in a table here that would drift from both. Every
+    gate that does not declare one is still derived from its signature.
+    """
+    if tier not in TIERS:
+        raise ValueError(f"unknown tier {tier!r}; expected one of {TIERS}")
+
+    def decorate(fn: Any) -> Any:
+        setattr(fn, NEEDS_ATTRIBUTE, tier)
+        return fn
+
+    return decorate
+
+
 def needs_for(fn: Callable[..., Any]) -> str:
     """The cheapest artifact ``fn`` needs before it can say anything true.
 
-    Derived from the gate's parameter list. A gate that names ``video_path``
-    needs a video; one that names ``document`` needs a project; anything else
-    runs on the spec. Note that ``delivery_contract`` accepts
-    ``rendered_duration_s`` but does not *require* it, so it stays in the spec
-    tier — which is why the classification keys on ``video_path`` alone.
+    Derived from the gate's parameter list: a gate that names ``video_path``
+    needs a video, one that names ``document`` needs a project, anything else
+    runs on the spec. A gate may correct that with :func:`needs` when it
+    *accepts* an artifact without requiring it.
+
+    Note that ``delivery_contract`` takes ``rendered_duration_s`` and stays in
+    the spec tier on purpose: the tier keys on ``video_path`` alone, and that
+    gate has no video parameter at all.
     """
+    declared = getattr(fn, NEEDS_ATTRIBUTE, None)
+    if declared is not None:
+        return declared
     names = set(_parameters(fn))
     if names & _VIDEO_INPUTS:
         return NEEDS_VIDEO

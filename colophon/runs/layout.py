@@ -79,9 +79,46 @@ def run_paths(run_dir: str | Path) -> RunPaths:
     )
 
 
+def frozen_spec_hash(paths: RunPaths) -> str | None:
+    """The hash of the spec already frozen in this run, if there is one.
+
+    Read from ``spec.sha256`` when present, and recomputed from the frozen
+    spec otherwise, so a run whose hash file was lost is still recognised as
+    holding a spec rather than mistaken for an empty directory.
+    """
+    if not paths.spec.is_file():
+        return None
+    try:
+        fields = paths.spec_hash.read_text(encoding="utf-8").split()
+        if fields:
+            return fields[0]
+    except OSError:
+        pass
+    try:
+        return spec_sha256(load_spec(paths))
+    except Exception:  # noqa: BLE001 - an unreadable spec is still *a* spec
+        return None
+
+
 def init_run(run_dir: str | Path, spec: VideoSpec) -> RunPaths:
-    """Create the run directory and freeze the spec into it."""
+    """Create the run directory and freeze the spec into it.
+
+    Refuses to freeze a *different* spec over an existing run. A run is one
+    spec's record: its attempts were emitted from that spec, and mixing a
+    second spec into the same directory leaves two generations of artifacts
+    behind one hash — which is exactly the confusion the fingerprint exists
+    to prevent. Re-initialising with the same spec is idempotent and allowed.
+    """
     paths = run_paths(run_dir)
+    existing = frozen_spec_hash(paths)
+    digest = spec_sha256(spec)
+    if existing is not None and existing != digest:
+        raise FileExistsError(
+            f"{paths.root} already holds a run for spec {existing[:12]}, not "
+            f"{digest[:12]}. Freezing a second spec here would leave attempts "
+            f"from both under one run directory, and a verdict could then be "
+            f"read against the wrong spec. Start a new run directory instead."
+        )
     paths.root.mkdir(parents=True, exist_ok=True)
     paths.attempts.mkdir(exist_ok=True)
     paths.final.mkdir(exist_ok=True)
@@ -106,16 +143,27 @@ def next_attempt(paths: RunPaths) -> int:
     return (max(numbers) + 1) if numbers else 1
 
 
-def begin_attempt(paths: RunPaths, number: int | None = None) -> AttemptPaths:
-    n = number if number is not None else next_attempt(paths)
-    root = paths.attempts / f"{n:02d}"
-    attempt = AttemptPaths(
+def attempt_paths(paths: RunPaths, number: int) -> AttemptPaths:
+    """Where attempt ``number`` lives, whether or not it exists yet.
+
+    Deliberately side-effect free. Inspecting an attempt (does its manifest
+    match the spec? does it hold a video?) must not conjure it into being —
+    a caller that only meant to ask should not find an empty attempt
+    directory written out as the answer.
+    """
+    root = paths.attempts / f"{number:02d}"
+    return AttemptPaths(
         root=root,
         project=root / PROJECT_DIRNAME,
         artifact=root / ARTIFACT_DIRNAME,
         qa=root / QA_DIRNAME,
         review=root / REVIEW_DIRNAME,
     )
+
+
+def begin_attempt(paths: RunPaths, number: int | None = None) -> AttemptPaths:
+    n = number if number is not None else next_attempt(paths)
+    attempt = attempt_paths(paths, n)
     for d in (attempt.project, attempt.artifact, attempt.qa, attempt.review):
         d.mkdir(parents=True, exist_ok=True)
     return attempt

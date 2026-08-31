@@ -73,6 +73,37 @@ def test_every_gate_is_classified_by_the_artifact_it_needs():
     assert qa_pipeline.NEEDS_VIDEO in catalog.values()
 
 
+def test_a_gate_that_only_accepts_a_video_is_not_a_video_tier_gate():
+    """Accepting an artifact is not the same as needing one.
+
+    ``scene_structure`` takes ``video_path`` for one extra check and does real
+    project-level work without it. Classifying it as video-tier told an agent
+    it had to render before this gate could speak, which is false — it catches
+    a zero-duration scene straight off the plan.
+    """
+    from colophon.qa.stages.structure import scene_structure
+
+    assert qa_pipeline.needs_for(scene_structure) == qa_pipeline.NEEDS_PROJECT
+
+
+def test_a_gate_that_cannot_run_without_a_video_stays_video_tier():
+    """The other half of the same distinction, so the fix cannot overcorrect."""
+    from colophon.qa.stages.media import media_contract
+
+    assert qa_pipeline.needs_for(media_contract) == qa_pipeline.NEEDS_VIDEO
+
+
+def test_gate_needs_rejects_an_unknown_tier():
+    with pytest.raises(ValueError):
+        qa_pipeline.gate_needs("vibes")
+
+
+def test_every_gate_declares_a_tier_the_catalog_can_report():
+    """No gate may fall through to a tier nobody can see."""
+    for info in qa_pipeline.gate_catalog(qa_pipeline.full_gate_fns()):
+        assert info.needs in qa_pipeline.TIERS, info.stage_id
+
+
 def test_gates_needing_no_more_than_spec_is_exactly_the_spec_level_set():
     full = qa_pipeline.full_gate_fns()
     filtered = qa_pipeline.gates_needing_no_more_than(full, qa_pipeline.NEEDS_SPEC)
