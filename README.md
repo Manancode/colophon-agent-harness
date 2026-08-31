@@ -1,8 +1,8 @@
 # colophon
 
-**an ai can make you a launch video in five minutes. it cannot tell you if the video is any good.**
+**an agent harness to make you a launch video in five minutes.**
 
-that is the problem we built this for.
+and it does not hand that video to you unchecked.
 
 ask an ai to make a launch video and you will get one back in minutes. it looks
 finished. it is usually not. the text spills off the edge of the screen. one
@@ -497,9 +497,10 @@ requests, and for the README to link a representative merged one.
 
 **Branch:** `feat/trueforge-mcp-server` → `main`
 
-**Status:** open, not yet reviewed. Qodo is installed on this repository, but
-review is pending rather than done. it is listed here anyway because the honest
-state is more useful than a green tick.
+**Status:** open, **reviewed by Qodo**. four findings, all accepted as valid.
+two are `Action required` and two are `Remediation recommended`. they are listed
+below with our triage, because the point of the exercise is that the review
+changed something.
 
 **What is in it, and what a reviewer should look at:**
 
@@ -517,6 +518,26 @@ state is more useful than a green tick.
   went through a PR is not evidence of review. they are disclosed as unreviewed
 * everything from here on goes through a PR. this is the first one in the
   repository's history
+
+**What Qodo found:**
+
+all four findings are accepted. the severity shown is Qodo's own label.
+
+| # | severity | finding | where | status |
+|---|---|---|---|---|
+| 1 | Action required (correctness) | `colophon_qa` selects the latest attempt without checking its manifest spec hash, then writes the current spec hash into the report. after the documented edit and revalidate workflow, an old artifact can end up carrying a verdict that appears to attest to a newer spec | `mcp_server.py` 345-395 | accepted, fixing next |
+| 2 | Remediation recommended (correctness) | `needs_for()` treats any gate that names `video_path` as video tier, but `scene_structure` has that input as optional and does real project-level work. so agents are told the wrong prerequisite, and project tier filtering drops a check that already works | `qa/pipeline.py` 106-120 | accepted, fixing next |
+| 3 | Action required (security) | the write tools accept arbitrary absolute paths, and the server resolves and writes them on the host with no allowed-root check. a sandboxed or prompt-injected agent can use colophon as a confused deputy to overwrite host files outside the sandbox, without triggering the write approval policy | `mcp_server.py` 261-280, 398-436, 494-537 | accepted, fixing next |
+| 4 | Remediation recommended (security) | `serve()` will bind to any interface with no authentication and no non-loopback guard, which exposes filesystem writes and renderer execution to unauthenticated clients on the network | `mcp_server.py` 589-618 | accepted, fixing next |
+
+two observations on these. finding 1 attacks the exact claim colophon makes,
+that every render is reproducible and attributable, so it is the one we care
+about most. findings 3 and 4 are not correctness bugs at all, they are about
+trust boundaries, and they are the reason the tools will grow explicit path
+scoping.
+
+all four go into a follow-up pull request rather than being quietly amended into
+an already-reviewed one, so that the fixes get reviewed too.
 
 **What review has already changed, before Qodo ran:**
 
