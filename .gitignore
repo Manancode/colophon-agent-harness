@@ -47,6 +47,10 @@ env/
 !docs/assets/**/*.png
 !docs/assets/**/*.svg
 
+# Blog hero and figures are part of the published blog post, not scratch.
+!blog/images/**/*.png
+!blog/images/**/*.svg
+
 # --- Node (renderer / tooling) ---------------------------------------------
 node_modules/
 .npm/
