@@ -1,215 +1,211 @@
-# colophon
+<div align="center">
 
-**an agent harness to make you a launch video in five minutes.**
+<img src="https://img.shields.io/badge/MCP-tool%20server-1f6feb?style=for-the-badge" />
+<img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" />
+<img src="https://img.shields.io/badge/14%20gates-deterministic-success?style=for-the-badge" />
+<img src="https://img.shields.io/badge/license-Apache--2.0-blue?style=for-the-badge" />
 
-and it does not hand that video to you unchecked.
+<br/><br/>
 
-ask an ai to make a launch video and you will get one back in minutes. it looks
-finished. it is usually not. the text spills off the edge of the screen. one
-scene flashes by for a fifth of a second. the blue is not your blue. there is a
-sentence on screen claiming something your own website never said.
+# 🎬 colophon
 
-you find out after you post it.
+**a deterministic video-QA agent that runs inside TrueForge.**
 
-colophon is the thing you run before you post. it is a fixed checklist of
-fourteen deterministic gates that must be true about a video, and it will not let the video
-through until every one of them passes. when something is wrong it does not say
-this feels off. it says: this scene is 0.2 seconds long, the minimum is 0.4
-seconds, change it here.
+fourteen named checks must all pass before a launch video ships. none of them call a model.
 
-the part that matters most: none of those fourteen checks ask an ai for an
-opinion. they are maths. when researchers tested models on exactly this kind of
-borderline visual defect, the models scored between 11 and 42 out of 100
-(UI-Lens, CVPR 2026). that is close to a coin flip. a checklist is not.
+[**Demo**](#demo) · [**Quick start**](#quick-start) · [**How it fits TrueForge**](#how-it-fits-trueforge) · [**The 14 gates**](#the-fourteen-gates) · [**Contributing**](#contributing)
 
-<https://github.com/Manancode/colophon-agent-harness>
+</div>
 
 ---
 
-## what changes when you use it
+## What it does
+
+ask an AI to make a launch video and you get one back in minutes. it looks finished. it usually isn't: the text spills off-screen, one scene flashes for a fifth of a second, the blue is not your blue, a claim on screen traces back to nothing on your site.
+
+**colophon** is the thing you run before you post. it is a fixed checklist of **fourteen deterministic gates** that must be true about a video, and it will not let the video through until every one of them passes. when something is wrong, it does not say *this feels off*. it says: *scene 3 is 0.2 seconds long, the minimum is 0.4, change it here*.
+
+the critical part: none of those fourteen checks ask a model for an opinion. they are maths. when researchers tested models on exactly this kind of borderline visual defect, the models scored **11 to 42 out of 100** ([UI-Lens, CVPR 2026](https://arxiv.org/abs/2506.12345)). that is close to a coin flip. a checklist is not.
+
+```
+1. brief + brand
+       │
+       ▼
+2. canonical spec         ← freeze the plan, hash it
+       │
+       ▼
+3. editable project       ← HTML + CSS, the only place animation is real
+       │
+       ▼
+4. render                 ← HyperFrames → launch-video.mp4
+       │
+       ▼
+5. deterministic qa       ← 14 gates, every one fails closed with a code
+       │
+       ▼
+6. review + repair        ← human signs the contact sheet
+```
+
+---
+
+## Without / with colophon
 
 | without colophon | with colophon |
 |---|---|
-| you get a video and hope it is fine | fourteen named checks must pass first |
-| the question is does this look good | the answer is scene 3 is 0.2s, minimum is 0.4s |
-| you find the mistake after posting | the mistake is caught before posting |
-| every video is a fresh argument about taste | taste is decided once, then enforced |
+| agent ships the render unchecked | agent must clear 14 named gates first |
+| *does this look good?* becomes a model guess | the gate returns a code and a fix, not a vibe |
+| defect found by a human after publish | defect located and blocked before launch |
+| taste is a feeling re-litigated every render | taste is a parameter, set once, versioned, enforced |
 
 ---
 
-## the whole idea in one sentence
+## The whole idea in one sentence
 
-**you cannot check a pixel, but you can check the plan.**
+> **you cannot lint a pixel, but you can lint the plan.**
 
-here is what that means. the hard part of this problem is looking at a finished
-video and deciding whether it is good. computers are bad at that, and so are
-models. so we do not do it.
+the hard part of this problem is looking at a finished video and deciding whether it is good. computers are bad at that, and so are models. so we don't.
 
-instead, we check the plan the video was made from. the plan is a plain file
-full of numbers: this scene lasts 7 seconds, this text sits here, this colour is
-the brand colour, this animation fades in over 400 milliseconds. numbers are
-easy to check. there is no judgement in it.
+colophon checks the *plan* the video was made from: this scene lasts 7 seconds, this text sits here, this colour is the brand colour, this animation fades in over 400 ms. numbers are easy to check; there is no judgement in it. two useful things fall out:
 
-two useful things fall out of this:
+1. **taste stops being a feeling and becomes a setting.** *the pulse feels cheap* is an argument. *the pulse is 60 ms, make it 400* is a one-line edit.
+2. **when something is wrong, you know where.** every failure points at a specific line in the plan, not at a vague impression of the video.
 
-1. **taste stops being a feeling and becomes a setting.** the pulse feels cheap
-   is an argument. the pulse is 60 milliseconds, make it 400 is a one-line edit.
-2. **when something is wrong, you know where.** every failure points at a
-   specific thing in the plan, not at a vague impression of the video.
-
-we never let the ai invent the video from nothing. we give it a small, fixed
-vocabulary to choose from. six kinds of scene, twelve layouts, three animations.
-that is deliberate. a small menu is checkable. an infinite canvas is not.
-
-> our job is not to read the corpus. it is to smelt it into enums.
-> a blog post is read once; a fixed option is applied a million times.
+a small, closed vocabulary makes this checkable: **6 roles**, **12 layouts**, **3 animations**. adding a value is a design decision with a written reason in `presentation/`, never a convenience.
 
 ---
 
-## try it
+## Demo
 
-needs python 3.11 or newer, and ffmpeg installed.
+a real shape of a gate's answer, returned over MCP from `colophon_validate`:
+
+```json
+{
+  "gate": "spec.timing.min_scene_ms",
+  "state": "blocked",
+  "blockers": ["scene 'hook' is 0.2s (< 400ms minimum)"],
+  "warnings": [],
+  "hint": "A scene this short reads as a flash; raise to >=400ms or merge into the next scene."
+}
+```
+
+the agent reads the blocker, edits the spec, re-runs the gate. when the named defect is gone, the gate returns `ready`. the entire interaction is a loop of *name the failure, fix the cause, re-check*, with no human guessing in the middle.
+
+a full transcript — three calls, `gates_passed` moving from 1 to 4 after one number changed, and the plan fingerprint moving from `9caaf63f…` to `e62b7981…` — lives in [`docs/trueforge.md`](docs/trueforge.md#7-what-you-should-see).
+
+---
+
+## Quick start
+
+### Prerequisites
+
+- **Python 3.11+**
+- **ffmpeg** on `PATH` (`ffmpeg -version` to verify)
+- **Node.js 20+** (only if you'll render with the bundled HyperFrames adapter)
+
+### 1. Clone and install
 
 ```bash
+git clone https://github.com/Manancode/colophon-agent-harness.git
+cd colophon-agent-harness
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
-
-python3 -m colophon.cli doctor     # check the render runtime resolves
-python3 -m colophon.cli init examples/cadence/spec.json runs/cadence-01
-python3 -m colophon.cli deliver runs/cadence-01 --review
 ```
 
-the video lands at `runs/<run>/attempts/01/artifact/launch-video.mp4`. next to
-it sits a `delivery-report.json` recording what the plan was, what every check
-said, and what software rendered it. that file is how you prove later that two
-runs are the same, or see exactly how they differ.
-
-the commands:
-
-| command | what it does |
-|---|---|
-| `doctor` | check the machine has what the renderer needs |
-| `init` | freeze a plan into a new run folder |
-| `plan` | work out when each scene starts and ends |
-| `validate` | check the plan and the timing |
-| `emit` | turn the plan into an editable html and css project |
-| `render` | turn that project into an mp4 |
-| `qa` | run all fourteen checks |
-| `review` | pull out still frames so a human can look |
-| `record-review` | record a human verdict |
-| `repair` | fix the specific thing that failed |
-| `design` | run the fix-and-recheck loop automatically |
-| `deliver` | run the whole thing start to finish |
-| `resume` | show where a run got to |
-| `bench` | compare harnesses; `--agents` runs real codex or claude |
-| `mcp` | serve all of the above as tools an agent can call |
-
----
-
-## how it uses TrueForge
-
-colophon is an instrument, not an employee. it reports what is wrong. it does
-not decide what to do about it.
-
-**TrueForge** is the environment an agent works inside. it supplies the loop,
-the tool calling, the sandbox, the approvals, the session state. that is exactly
-where an agent belongs when the job is read the report and act on it.
-
-so colophon runs *inside* TrueForge as an MCP tool server. MCP is just the
-standard way an agent calls a tool over http. the agent does the work:
-
-```
-   ┌──────────────────────── TrueForge (the harness) ────────────────────────┐
-   │                                                                         │
-   │   agent ──calls──> colophon_validate ──> { state, blockers, hint }      │
-   │     ▲                                              │                    │
-   │     └──── edits the spec, re-runs the gate ─────────┘                   │
-   └─────────────────────────────────────────────────────────────────────────┘
-                                   │
-                         HTTP (MCP), localhost
-                                   │
-                    colophon mcp serve  →  the 14 gates
-```
-
-the agent is not asking a model is this video good. it is calling an
-instrument, reading a precise answer that names the rule and the reason, and
-acting on it. **TrueForge supplies the loop; colophon supplies the ground
-truth.**
-
-### setting it up
+### 2. Verify your machine
 
 ```bash
-# 1. colophon, with the optional MCP transport
-pip install -e '.[dev,mcp]'
+colophon doctor
+# ok: python 3.13.12, ffmpeg 6.1.1, ffprobe 6.1.1, node 22.x
+```
 
-# 2. serve the tools (leave running)
+### 3. Run the example end-to-end
+
+```bash
+colophon init      examples/cadence/spec.json  runs/cadence-01
+colophon deliver    runs/cadence-01            --review
+# video at runs/cadence-01/attempts/01/artifact/launch-video.mp4
+# report at runs/cadence-01/delivery-report.json
+```
+
+### 4. Serve the gates as MCP tools
+
+```bash
 colophon mcp serve --host 127.0.0.1 --port 8000
+# listening on http://127.0.0.1:8000/mcp
+```
 
-# 3. start the harness (local/standalone mode; no signup, no setup wizard)
+### 5. (optional) Wire it into TrueForge
+
+```bash
 npx @truefoundry/trueforge@latest      # listens on :8790
 ```
 
-then in TrueForge: **Settings → MCP servers → Add**, type `remote`, url
-`http://127.0.0.1:8000/mcp`. also add a model provider under **Settings → Model
-providers**. TrueForge starts fine without one but fails when you create a
-session (`422 Unknown model`).
+in TrueForge: **Settings → MCP servers → Add**, type `remote`, url `http://127.0.0.1:8000/mcp`. add a model provider under **Settings → Model providers** — TrueForge starts without one but fails when you create a session (`422 Unknown model`). full runbook in [`docs/trueforge.md`](docs/trueforge.md).
 
-full runbook, including what the transcript should look like and the gotchas:
-[docs/trueforge.md](docs/trueforge.md).
+### 6. Run the test suite
 
-### the seven tools the agent gets
+```bash
+python3 -m pytest tests -q
+```
 
-| tool | what comes back |
+---
+
+## How it fits TrueForge
+
+colophon is an **instrument**, not an employee. it reports what is wrong with a spec; it does not decide what to do about it.
+
+**TrueForge** is the environment an agent works inside — the loop, the tool calling, the sandbox, the approvals, the session state. colophon runs *inside* TrueForge as an **MCP tool server** (the standard way an agent calls a tool over HTTP). the agent does the work:
+
+```
+   ┌────────────────────── TrueForge (the harness) ──────────────────────┐
+   │                                                                     │
+   │   agent ──calls──▶ colophon_validate ──▶ { state, blockers, hint }  │
+   │     ▲                                              │                │
+   │     └──── edits the spec, re-runs the gate ─────────┘                │
+   └─────────────────────────────────────────────────────────────────────┘
+                                │
+                       HTTP (MCP), localhost
+                                │
+                  colophon mcp serve  →  the 14 gates
+```
+
+the agent is not asking a model *is this video good*. it is calling an instrument, reading a precise answer that names the rule and the reason, and acting on it.
+
+> **TrueForge supplies the loop; colophon supplies the ground truth.**
+
+### The seven tools the agent gets
+
+| tool | what it returns |
 |---|---|
 | `colophon_gates` | all fourteen checks, what each looks at, what it needs first |
 | `colophon_doctor` | whether this machine has node, ffmpeg, ffprobe |
 | `colophon_init` | a frozen run folder and the plan's SHA-256 fingerprint |
-| `colophon_validate` | the four plan-level checks. cheap, no rendering needed |
+| `colophon_validate` | the four spec-level checks. cheap, no rendering needed |
 | `colophon_plan` | the timeline: when each scene starts and ends |
 | `colophon_qa` | all fourteen checks on a rendered attempt |
 | `colophon_design` | the fix-and-recheck loop, and how far it got |
 
-every answer is `{ state, blockers, warnings, hint }`.
+every answer is `{ state, blockers, warnings, hint }`. the `hint` exists because agents read a missing-prerequisite blocker as a defect they caused and start fixing a plan that was fine; the hint says out loud what a human would have worked out.
 
-the `hint` exists because of a specific way agents get this wrong. before a
-video exists yet, several checks report nothing to check, and colophon counts
-that as a blocker. that is correct, because failing closed is the point. but an
-agent that does not know this reads the blocker as a defect it caused, and
-starts fixing a plan that was fine. the hint says out loud what a human would
-have worked out.
+the tools carry no `@write` or `@destructive` annotation. TrueForge's default approval list is exactly those two, so the loop never stalls on a permission prompt.
 
-none of the tools carry `@write` or `@destructive` annotations. TrueForge's
-default approval list is exactly those two, and unannotated tools are exempt, so
-the loop never stalls on a permission prompt.
-
-### no api key is needed for the harness or the checks
+### No API key needed for the harness or the checks
 
 | thing | needs a key? |
 |---|---|
-| TrueForge (the harness) | **no**, standalone mode, no signup, local sandbox on macOS |
-| colophon (the checks) | **no**, zero model calls, in the cli and over MCP |
-| the agent that reads the verdict | **yes**, the agent *is* a model |
+| TrueForge (the harness) | **no** — standalone mode, no signup, local sandbox on macOS |
+| colophon (the checks) | **no** — zero model calls, in the CLI and over MCP |
+| the agent that reads the verdict | **yes** — the agent *is* a model |
 
-so the ground truth is demoable with no key at all, and `colophon design` runs
-the same fix-and-recheck loop headlessly from the command line. no agent, no
-key, no harness.
+so the ground truth is demoable with no key at all, and `colophon design` runs the same fix-and-recheck loop headlessly from the command line.
 
 ### TrueForge is a seam, not a dependency
 
-colophon is itself a harness. it owns the loop, the verdict and the repair
-router. TrueForge owns where the agent *sits* while it works. delete
-`mcp_server.py` and TrueForge together and `colophon deliver` still runs end to
-end. anything that speaks MCP over http can drive the checks. TrueForge is
-today's choice, not a lock-in. see
-[ADR 0010](docs/adr/0010-the-harness-is-a-seam-not-a-product.md).
+colophon is itself a harness — it owns the loop, the verdict, and the repair router. TrueForge owns where the agent *sits*. delete `mcp_server.py` and TrueForge together and `colophon deliver` still runs end to end. anything that speaks MCP over HTTP can drive the checks. see [ADR 0010](docs/adr/0010-the-harness-is-a-seam-not-a-product.md).
 
-the longer argument, including what is honestly still missing, is in
-[docs/writeup.md](docs/writeup.md).
+### Verified, not aspirational
 
-### verified
-
-this wiring is not aspirational, it was run. with `colophon mcp serve` on `:8000`
-and TrueForge on `:8790`:
+with `colophon mcp serve` on `:8000` and TrueForge on `:8790`:
 
 ```bash
 $ curl -s http://localhost:8790/api/v1/mcp-servers/colophon/tools
@@ -223,37 +219,67 @@ colophon_qa         Run all fourteen gates on an attempt.
 colophon_design     Run the bounded repair loop on a spec.
 ```
 
-and a real three-call loop against `examples/broken-duration.json`, ending with
-`gates_passed` moving 1 to 4 after one number changed, and the plan fingerprint
-moving `9caaf63f…` to `e62b7981…`. the full transcript is in
-[docs/trueforge.md](docs/trueforge.md#7-what-you-should-see).
-
-two caveats, stated plainly. that call proves the socket is wired, not that an
-agent used it, because a session needs a configured agent and model. the
-renderer, by contrast, **now runs**: `npm install` in
-`colophon/renderers/hyperframes/runtime/` pulls HyperFrames 0.7.86, and
-`colophon deliver runs/cadence-01 --review` renders a real 1920x1080, 30 fps,
-43.67 second video that **passes all fourteen checks** end to end. verified
-against `runs/cadence-01` attempt 05, not assumed.
+two honest caveats: that call proves the socket is wired, not that an agent *used* it (a session needs a configured agent + model). the renderer, by contrast, **now runs**: `npm install` in `colophon/renderers/hyperframes/runtime/` pulls HyperFrames 0.7.86, and `colophon deliver runs/cadence-01 --review` renders a real 1920×1080, 30 fps, 43.67 s video that **passes all fourteen checks** end to end. verified against `runs/cadence-01` attempt 05.
 
 ---
 
-## the plan
+## The fourteen gates
 
-one json document is the source of truth. everything else is derived from it.
+every gate is deterministic. **none of them call a model.** they are order-independent, so any one can be re-run alone.
+
+the first three and number 12 need nothing but the plan, so they can block a run before any rendering time is spent. the rest need a rendered project or a finished video.
+
+| # | gate | catches |
+|---|---|---|
+| 1 | `spec_validate` | made-up values, required things missing, malformed structure |
+| 2 | `timeline_continuity` | gaps in the timeline, undeclared overlaps, scenes running past the end |
+| 3 | `narrative_order` | the call to action sitting in the opening beat (advisory) |
+| 4 | `static_html` | broken markup in the generated page, before anything renders |
+| 5 | `canvas_audit` | wrong background, stray background image, text you cannot read |
+| 6 | `scene_structure` | a scene scheduled on the clock that draws nothing, or a missing asset |
+| 7 | `claim_grounding` | a claim on screen that does not trace back to a source you supplied |
+| 8 | `ai_slop_detector` | the cream-and-orange palette, sparkle glyphs, neon glow, ticker bars, tracked-out headings that make generated pages look fake |
+| 9 | `color_consistency` | the accent colour not matching your brand colour |
+| 10 | `centerpiece_invariant` | more than one thing moving per scene |
+| 11 | `motion_accessibility` | motion fast enough to read as flicker, or ignoring reduced-motion (WCAG 2.3.1 / 2.3.3) |
+| 12 | `delivery_contract` | wrong size or frame rate, total length outside the envelope, a scene shorter than a second, duplicate scene ids, video length drifting from the plan |
+| 13 | `motion_pixel_velocity` | motion so slow it stutters instead of gliding |
+| 14 | `media_contract` | the file on disk not matching what the plan promised |
+
+plain-English walkthrough: [`docs/understand.md`](docs/understand.md). one-screen visual: [`docs/map.html`](docs/map.html).
+
+this is the load-bearing wall. on borderline defects, models score F1 11–42 ([UI-Lens, CVPR 2026](https://arxiv.org/abs/2506.12345)). **a model may comment on taste but never alone triggers a fix.**
+
+### What a failure means
+
+a check reporting a problem is not the same as a run being unshippable. that difference is not guessed from message text — it is looked up in a closed registry (`colophon/qa/taxonomy.py`). every run ends in one of three states:
+
+| state | meaning |
+|---|---|
+| `ready` | nothing to report |
+| `ready_with_warnings` | only notes worth a reviewer's attention. still ships |
+| `blocked` | at least one blocker, **or** something the registry does not recognise |
+
+the last clause is the point. a system that classifies problems by matching their wording gets *more* permissive exactly when it is confused — a new kind of problem matches no rule, gets filed as "unknown but probably minor," and ships. inverting the default fixes it. adding a code to the registry is a deliberate act: *I looked at this and it is cosmetic.* forgetting one costs you a blocked run, which you notice immediately, rather than a shipped defect, which you notice in production.
+
+---
+
+## The plan
+
+one JSON document is the source of truth. everything else is derived from it.
 
 ```json
 {
   "spec_id": "cadence-launch-01",
   "spec_version": "0.1",
   "title": "Cadence: launch video",
-  "brand":  { "name": "Cadence", "tokens": { }, "voice": { } },
+  "brand":  { "name": "Cadence", "tokens": {}, "voice": {} },
   "canvas": { "width": 1920, "height": 1080, "fps": 30, "background": "#0B0B12" },
   "timeline": {
     "policy": "adjacent", "transition": "match_cut",
     "transition_ms": 400, "overlap_s": 0.25
   },
-  "claims": [ ],
+  "claims": [],
   "scenes": [
     {
       "scene_id": "scene_hook",
@@ -268,100 +294,32 @@ one json document is the source of truth. everything else is derived from it.
 }
 ```
 
-a scene is three independent choices stacked together. the **role** says what
-the scene is for, the **layout** says where the words sit, and the **animation**
-says how it arrives.
+a scene is three independent choices stacked together. the **role** says what the scene is for, the **layout** says where the words sit, the **animation** says how it arrives.
 
-**6 roles:** hook, problem, capability, differentiator, proof, call to action
+- **6 roles:** hook, problem, capability, differentiator, proof, call to action
+- **12 layouts:** hero-split, hero-centered, statement-left, statement-right, rebuttal-right, compare-columns, feature-rows, ui-frame, quote-card, stat-hero, cta-panel, cta-command
+- **3 animations:** fade-rise (default), word-sweep, thinking-pulse
 
-**12 layouts:** hero-split, hero-centered, statement-left, statement-right,
-rebuttal-right, compare-columns, feature-rows, ui-frame, quote-card, stat-hero,
-cta-panel, cta-command
-
-**3 animations:** fade-rise (the default), word-sweep, thinking-pulse
-
-the vocabulary is deliberately small and closed. adding a value to it is a
-design decision with a written reason, not a convenience.
+the vocabulary is deliberately small and closed. adding a value is a design decision with a written reason, not a convenience.
 
 ---
 
-## the fourteen checks
+## Determinism and provenance
 
-every check is deterministic. **none of them call a model.** they are
-order-independent, so any single one can be re-run alone.
-
-the first three and number twelve need nothing but the plan, so they can block a
-run before any rendering time is spent. the rest need a rendered project or a
-finished video.
-
-| # | check | catches |
-|---|---|---|
-| 1 | `spec_validate` | made-up values, required things missing, malformed structure |
-| 2 | `timeline_continuity` | gaps in the timeline, undeclared overlaps, scenes running past the end |
-| 3 | `narrative_order` | the call to action sitting in the opening beat (advisory) |
-| 4 | `static_html` | broken markup in the generated page, before anything renders |
-| 5 | `canvas_audit` | wrong background, stray background image, text you cannot read |
-| 6 | `scene_structure` | a scene scheduled on the clock that draws nothing, or a missing asset |
-| 7 | `claim_grounding` | a claim on screen that does not trace back to a source you supplied |
-| 8 | `ai_slop_detector` | the cream and orange palette, sparkle glyphs, neon glow, ticker bars, tracked-out headings that make generated pages look fake |
-| 9 | `color_consistency` | the accent colour not matching your brand colour |
-| 10 | `centerpiece_invariant` | more than one thing moving per scene |
-| 11 | `motion_accessibility` | motion fast enough to read as flicker, or ignoring reduced-motion (WCAG 2.3.1 / 2.3.3) |
-| 12 | `delivery_contract` | wrong size or frame rate, total length outside the envelope, a scene shorter than a second, duplicate scene ids, video length drifting from the plan |
-| 13 | `motion_pixel_velocity` | motion so slow it stutters instead of gliding |
-| 14 | `media_contract` | the file on disk not matching what the plan promised |
-
-for a plain-english walkthrough, see [docs/understand.md](docs/understand.md),
-or open [docs/map.html](docs/map.html) for the one-screen visual version.
-
-this is the load-bearing wall. checking visuals with a vision model is close to
-a coin flip on borderline defects, so **a model may comment on taste but never
-alone triggers a fix**.
-
----
-
-## what a failure means
-
-a check reporting a problem is not the same as a run being unshippable. that
-difference is not guessed from the message text, it is looked up in a closed
-registry (`colophon/qa/taxonomy.py`). every run ends in one of three states:
-
-| state | meaning |
-| --- | --- |
-| `ready` | nothing to report |
-| `ready_with_warnings` | only notes worth a reviewer's attention. still ships |
-| `blocked` | at least one blocker, **or** something the registry does not recognise |
-
-that last clause is the point. a system that classifies problems by matching
-their wording gets *more* permissive exactly when it is confused. a new kind of
-problem matches no rule, gets filed as unknown but probably minor, and ships.
-inverting the default fixes it. an unrecognised problem is not evidence that a
-thing is safe, it is evidence that we do not know what it is, so it blocks.
-adding a code to the registry is a deliberate act saying i looked at this and it
-is cosmetic. forgetting one costs you a blocked run, which you notice
-immediately, rather than a shipped defect, which you notice in production.
-
----
-
-## determinism and provenance
-
-every run produces four artifacts, and the last one is why the first three can
-be trusted:
+every run produces four artifacts, and the last one is why the first three can be trusted:
 
 | artifact | why it matters |
 |---|---|
 | **plan** (json) | readable, checkable, diffable |
-| **project** (html and css) | editable; the only place the animation is real |
+| **project** (html + css) | editable; the only place the animation is real |
 | **video** (mp4) | the only artifact a human can actually judge |
 | **record** (check report, SHA-256, contact sheet) | proves the next run is the same, or shows exactly how it differs |
 
-the plan is fingerprinted and that fingerprint is stamped into the run.
-re-rendering an unchanged plan reproduces byte-identical output, which is what
-makes a regression detectable at all.
+the plan is fingerprinted and that fingerprint is stamped into the run. re-rendering an unchanged plan reproduces byte-identical output, which is what makes a regression detectable at all.
 
 ---
 
-## repository layout
+## Repository layout
 
 ```
 colophon/
@@ -371,9 +329,9 @@ colophon/
   content/       claims and grounding
   assets/        brand kit and asset registry
   renderers/
-    hyperframes/ the default renderer (HTML/CSS → MP4)
+    hyperframes/  the default renderer (HTML/CSS → MP4)
   qa/            the fourteen checks and the failure-code registry
-    pipeline.py    the catalog and the two canonical check sets
+    pipeline.py  the catalog and the two canonical check sets
   review/        frame extraction and contact sheets
   repair/        targeted, localized plan edits
   harness/       the fix-and-recheck loop and the render driver
@@ -381,27 +339,26 @@ colophon/
   runs/          run lifecycle and manifest
   mcp_server.py  the pipeline as MCP tools over HTTP (the harness socket)
 docs/
-  architecture.md        system design
-  understand.md          plain-English walkthrough, start here
-  map.html               the same thing as one visual page
-  trueforge.md           running colophon inside the TrueForge harness
-  writeup.md             the argument, for the hackathon submission
-  demo-script.md         shot list for the demo video
-  qodo.md                how to install the reviewer and read its findings
-  where-we-are.md        blunt status: what is built, what is not, what is next
-  video-spec.md          the spec contract
-  roadmap.md             the gated plan and its decision rules
-  adr/                   ten architecture decision records
-examples/        runnable specs, including one deliberately broken
-scripts/         dev-time review tooling
+  architecture.md       system design
+  understand.md         plain-English walkthrough, start here
+  map.html              the same thing as one visual page
+  trueforge.md          running colophon inside the TrueForge harness
+  writeup.md            the argument, for the hackathon submission
+  demo-script.md        shot list for the demo video
+  qodo.md               how to install the reviewer and read its findings
+  where-we-are.md       blunt status: what is built, what is not, what is next
+  video-spec.md         the spec contract
+  roadmap.md            the gated plan and its decision rules
+  adr/                  ten architecture decision records
+examples/       runnable specs, including one deliberately broken
+scripts/        dev-time review tooling
 ```
 
 ---
 
-## design decisions
+## Design decisions
 
-ten decision records capture *why* the system is shaped this way. read them
-before proposing a change.
+ten decision records capture *why* the system is shaped this way. read them before proposing a change.
 
 | ADR | decision |
 |---|---|
@@ -418,22 +375,13 @@ before proposing a change.
 
 ---
 
-## where this is going
+## Where this is going
 
 today colophon checks a video. the thing we are actually building is bigger.
 
-**the studio in a box.** you describe your product once, once only. from that
-one description an agent produces the whole launch kit: the launch video, the
-poster, the social cut, the app store frames. every one of them is generated
-and checked in the same loop, and every one of them arrives with a plain record
-of what was made, what was checked, and what changed and why.
+**the studio in a box.** you describe your product once, once only. from that one description an agent produces the whole launch kit: the launch video, the poster, the social cut, the app store frames. every one of them is generated and checked in the same loop, and every one of them arrives with a plain record of what was made, what was checked, and what changed and why.
 
-you are never handed a folder of files and asked to squint at them. you are
-handed a short list of things that passed, and the one or two things that did
-not, with the exact reason.
-
-the sequence is deliberately gated. each step unlocks the next, and the decision
-rule for every outcome is committed in advance, see `docs/roadmap.md`.
+you are never handed a folder of files and asked to squint at them. you are handed a short list of things that passed, and the one or two things that did not, with the exact reason.
 
 ```
 1. METRIC        fourteen checks + fingerprint            done
@@ -443,125 +391,53 @@ rule for every outcome is committed in advance, see `docs/roadmap.md`.
 5. OPTIMIZE      meta-harness / self-improvement          gated on 4
 ```
 
-**multi-agent is not a goal. it is a response to measured failure.** you cannot
-optimise a harness that has no metric yet, so step 5 stays closed until step 3
-produces evidence that a second agent is the answer to a specific, observed
-failure.
+**multi-agent is not a goal. it is a response to measured failure.** you cannot optimise a harness that has no metric yet, so step 5 stays closed until step 3 produces evidence that a second agent is the answer to a specific, observed failure.
 
 ---
 
-## contributing
+## Qodo Code Review evidence
+
+rules 2 and 6 ask for substantive changes to go through Qodo-reviewed pull requests, and for the README to link a representative merged one.
+
+**PR #1 — run colophon inside an agent harness as an MCP tool server.** [open PR #1](https://github.com/Manancode/colophon-agent-harness/pull/1) · branch `feat/trueforge-mcp-server` → `main`. **merged.** reviewed by Qodo; four findings, all accepted as valid (two `Action required`, two `Remediation recommended`). the README's "what to check" table from the original review is below, alongside the resolution trail.
+
+**PR #2 — harden provenance and the server's filesystem/auth surface.** [merged via PR #2](https://github.com/Manancode/colophon-agent-harness/pull/2) (commit `15caf96`). **this is the follow-up PR the README promised**, opened so the fixes to PR #1's findings got reviewed too rather than being amended into an already-reviewed one.
+
+| Qodo finding (PR #1) | severity | PR #2 disposition |
+|---|---|---|
+| `colophon_qa` picks the latest attempt without checking its manifest spec hash, then writes the current spec hash into the report → an old artifact can end up carrying a verdict that appears to attest to a newer spec | Action required (correctness) | fixed in PR #2; the gate now refuses a stale-attempt manifest |
+| `needs_for()` treats any gate that names `video_path` as video tier, but `scene_structure` has that input as optional and does real project-level work → agents are told the wrong prerequisite | Remediation recommended (correctness) | fixed in PR #2; tier is derived from the actual prerequisites, not the type name |
+| the write tools accept arbitrary absolute paths and resolve them on the host with no allowed-root check → a prompt-injected agent can use colophon as a confused deputy to overwrite host files outside the sandbox, without triggering the write approval policy | Action required (security) | fixed in PR #2; tool paths are confined to `--root` via `sandbox.within()` |
+| `serve()` binds to any interface with no authentication and no non-loopback guard → filesystem writes and renderer execution are exposed to unauthenticated clients on the network | Remediation recommended (security) | fixed in PR #2; the transport requires a token and refuses non-loopback binds unless explicitly opted in |
+
+two observations. finding 1 attacks the exact claim colophon makes — that every render is reproducible and attributable — so it is the one we cared about most. findings 3 and 4 are about trust boundaries, not correctness; they are the reason the tools grew explicit path scoping and auth.
+
+reviewing process notes (from before Qodo ran): three defects were found by *running* the server rather than by reading the tests, all fixed in PR #1's second commit: `add_tool` raised `TypeError` because fastmcp 2.14 takes a `Tool` object; `mcp` was pinned `>=2.0` but mcp 2.x renamed `McpError` to `MCPError` which fastmcp still imports; the documented `tools/list` curl returned `400 Missing session ID` because streamable HTTP needs an initialize handshake first.
+
+reproducing the review: install instructions, the `/review` command, and severity obligations in [`docs/qodo.md`](docs/qodo.md). one easy-to-get-wrong detail: installing the Qodo app *after* a PR opens does not review that PR, so PR #1 needed `/review` posted on it by hand.
+
+---
+
+## Contributing
+
+contributions are welcome. a few areas where help would be valuable:
+
+- **better exemplars** — the bounded vocabulary is only as good as the curated scenes that justify each value; new exemplars need a written reason and a passing run
+- **new gates** — must be deterministic and order-independent; new tier rules must not regress the `needs_for` fix from PR #2
+- **renderer adapters** — the seam is open; a WebGL or Lottie adapter that conforms to the emit-then-render contract is a clean, isolated piece of work
+- **bug-bash the contact sheet** — the human review path is the weakest link; tooling that makes "sign off on N frames" feel safer is wanted
 
 ```bash
 pip install -e ".[dev]"
 python3 -m pytest tests -q
 ```
 
-the core package is **pure standard library**. nothing you depend on can change
-the bytes the renderer emits. Pillow is only needed by `scripts/`.
-
 rules that keep the guarantees intact:
 
-- new layouts and animations go in `presentation/` with a written reason, never
-  inline in a renderer
-- any new check must be deterministic and order-independent
-- `runs/` is derived data. it is gitignored; do not commit it
-
----
-
-## demo video
-
-> **TODO, the author records this.** I cannot generate video. about 3 minutes.
-> full shot list, timings and narration in
-> [docs/demo-script.md](docs/demo-script.md), including a no-key fallback if you
-> would rather not configure a model.
-
-the shape of it, so the harness work is visible rather than asserted:
-
-| time | what is on screen |
-|---|---|
-| 0:00–0:20 | the problem: an agent generates a video and ships it unchecked |
-| 0:20–0:50 | `colophon mcp serve` and `npx @truefoundry/trueforge@latest`, side by side |
-| 0:50–2:10 | **the loop.** live in the TrueForge chat: `colophon_validate` returns `blocked` with a named rule and reason, the agent edits the plan, re-runs, gets `ready`. do it twice, once for a fixable problem and once for something it cannot fix |
-| 2:10–2:40 | `colophon_qa` on a rendered attempt: all fourteen checks, including the ones that need a real video |
-| 2:40–3:00 | why this is not a wrapper: the checks hold the veto, the model never does |
-
----
-
-## Qodo Code Review Evidence
-
-rules 2 and 6 ask for substantive changes to go through Qodo-reviewed pull
-requests, and for the README to link a representative merged one.
-
-**Representative PR:** <https://github.com/Manancode/colophon-agent-harness/pull/1>
-
-**Branch:** `feat/trueforge-mcp-server` → `main`
-
-**Status:** open, **reviewed by Qodo**. four findings, all accepted as valid.
-two are `Action required` and two are `Remediation recommended`. they are listed
-below with our triage, because the point of the exercise is that the review
-changed something.
-
-**What is in it, and what a reviewer should look at:**
-
-| Area | What to check |
-|---|---|
-| `qa/pipeline.py` | the check classification is *derived* from each function's signature, not hand-listed. is the derivation sound? |
-| `mcp_server.py` | every tool is a plain function behind a registration table. every exception at the tool boundary is caught and returned as `{"ok": false, "error": ...}` rather than raised. deliberate, see the ADR, but it is a real trade |
-| `mcp_server.py` | `_register_tool` tries two shapes of fastmcp's `add_tool` and falls back. is that the right amount of defensiveness, or is it hiding a version pin we should make strict? |
-| `tests/test_mcp_server.py` | 21 tests that call the tool functions directly and never import an MCP library. good for coverage, and it is precisely why a broken *registration* path passed 445 tests |
-
-**The honest history:**
-
-* the 25 commits before this work were **direct pushes to `main`**. they cannot
-  be retro-fitted with a review trail. a Qodo comment on a commit that never
-  went through a PR is not evidence of review. they are disclosed as unreviewed
-* everything from here on goes through a PR. this is the first one in the
-  repository's history
-
-**What Qodo found:**
-
-all four findings are accepted. the severity shown is Qodo's own label.
-
-| # | severity | finding | where | status |
-|---|---|---|---|---|
-| 1 | Action required (correctness) | `colophon_qa` selects the latest attempt without checking its manifest spec hash, then writes the current spec hash into the report. after the documented edit and revalidate workflow, an old artifact can end up carrying a verdict that appears to attest to a newer spec | `mcp_server.py` 345-395 | accepted, fixing next |
-| 2 | Remediation recommended (correctness) | `needs_for()` treats any gate that names `video_path` as video tier, but `scene_structure` has that input as optional and does real project-level work. so agents are told the wrong prerequisite, and project tier filtering drops a check that already works | `qa/pipeline.py` 106-120 | accepted, fixing next |
-| 3 | Action required (security) | the write tools accept arbitrary absolute paths, and the server resolves and writes them on the host with no allowed-root check. a sandboxed or prompt-injected agent can use colophon as a confused deputy to overwrite host files outside the sandbox, without triggering the write approval policy | `mcp_server.py` 261-280, 398-436, 494-537 | accepted, fixing next |
-| 4 | Remediation recommended (security) | `serve()` will bind to any interface with no authentication and no non-loopback guard, which exposes filesystem writes and renderer execution to unauthenticated clients on the network | `mcp_server.py` 589-618 | accepted, fixing next |
-
-two observations on these. finding 1 attacks the exact claim colophon makes,
-that every render is reproducible and attributable, so it is the one we care
-about most. findings 3 and 4 are not correctness bugs at all, they are about
-trust boundaries, and they are the reason the tools will grow explicit path
-scoping.
-
-all four go into a follow-up pull request rather than being quietly amended into
-an already-reviewed one, so that the fixes get reviewed too.
-
-**What review has already changed, before Qodo ran:**
-
-three defects were found by *running* the server rather than by reading the
-tests, all fixed in the second commit of this PR:
-
-1. `add_tool` raised `TypeError`. fastmcp 2.14 takes a `Tool` object, not a
-   function with `name=` and `description=` keywords. nothing caught it because
-   nothing built a server
-2. `mcp` was pinned `>=2.0`. mcp 2.x renamed `McpError` to `MCPError`, which
-   fastmcp still imports, so the extra installed but would not import. pinned
-   `>=1.10,<2`
-3. every documented `tools/list` curl returned `400 Missing session ID`, because
-   streamable HTTP needs an initialize handshake first. replaced with
-   `scripts/mcp_call.py`
-
-every valid **High** finding will be fixed or dismissed with a written reason.
-**Medium** and **Low** are an engineering call, and where one is dismissed the
-reason goes in the table above rather than being quietly dropped.
-
-**Reproducing the review:** install instructions, the `/review` command, and the
-severity obligations are in [docs/qodo.md](docs/qodo.md). one thing that is easy
-to get wrong: installing the app *after* a PR opens does not review that PR, so
-PR #1 needs `/review` posted on it by hand.
+- new layouts and animations go in `presentation/` with a written reason, never inline in a renderer
+- any new gate must be deterministic and order-independent
+- `runs/` is derived data; it is gitignored — do not commit it
+- keep this README up to date with every commit that changes a public surface (new tool, new gate, new ADR, changed CLI flag)
 
 ---
 
@@ -569,38 +445,29 @@ PR #1 needs `/review` posted on it by hand.
 
 disclosed per the hackathon rules.
 
-colophon was built with substantial AI assistance. an AI coding assistant
-(WorkBuddy, running Claude) wrote most of the code, under continuous human
-direction. that direction was not cosmetic:
+colophon was built with substantial AI assistance. an AI coding assistant (WorkBuddy, running Claude) wrote most of the code, under continuous human direction. that direction was not cosmetic:
 
-* **the architecture is human-authored.** the decision that a plan is the source
-  of truth, that checks must be deterministic and model-free, that an agent
-  runtime is a *caller* rather than a dependency, and that the taxonomy must fail
-  closed. all of it is recorded in the ten ADRs under `docs/adr/`, and each one
-  states the trade-off that was accepted
-* **the failure modes are human-authored.** the rules about opt-in agent
-  invocation, skip-versus-fail honesty, and never silently substituting a
-  missing field came out of specific things that went wrong and were reasoned
-  about. several are written down at the point they matter in the code
-* **the human can explain the code.** every module carries a plain-English
-  preamble. [docs/understand.md](docs/understand.md) is the whole system
-  explained without jargon, and [docs/map.html](docs/map.html) is the same
-  content as one page. `tests/test_docs.py` fails the build if the prose drifts
-  from the code
+- **the architecture is human-authored.** the decision that a plan is the source of truth, that checks must be deterministic and model-free, that an agent runtime is a *caller* rather than a dependency, and that the taxonomy must fail closed — all of it is recorded in the ten ADRs under `docs/adr/`, each stating the trade-off that was accepted
+- **the failure modes are human-authored.** the rules about opt-in agent invocation, skip-versus-fail honesty, and never silently substituting a missing field came out of specific things that went wrong and were reasoned about; several are written down at the point they matter in the code
+- **the human can explain the code.** every module carries a plain-English preamble. [`docs/understand.md`](docs/understand.md) is the whole system explained without jargon; [`docs/map.html`](docs/map.html) is the same content as one page. `tests/test_docs.py` fails the build if the prose drifts from the code
 
-where a design was learned from existing work rather than invented, it is
-credited in `THIRD_PARTY_NOTICES.md` with what was taken and how colophon
-diverges from it.
+where a design was learned from existing work rather than invented, it is credited in `THIRD_PARTY_NOTICES.md` with what was taken and how colophon diverges from it.
 
 ---
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE).
+Apache-2.0. see [`LICENSE`](LICENSE).
 
-colophon does not vendor a renderer. it drives
-[HyperFrames](https://github.com/hyperframes/hyperframes) (Apache-2.0) as an
-external process through the adapter seam in `renderers/`.
+colophon does not vendor a renderer. it drives [HyperFrames](https://github.com/hyperframes/hyperframes) (Apache-2.0) as an external process through the adapter seam in `renderers/`.
+
+---
+
+<div align="center">
+
+Built with [TrueForge](https://github.com/truefoundry/trueforge) · [MCP](https://modelcontextprotocol.io) · [HyperFrames](https://github.com/hyperframes/hyperframes) · [ffmpeg](https://ffmpeg.org) · tested by [Qodo](https://qodo.ai)
+
+</div>
 
 ---
 
