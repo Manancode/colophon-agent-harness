@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      @font-face {
+        font-family: "Cal Sans";
+        src: url("assets/fonts/fdN99sWUv3gWqXxqqRBStFs04A.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Fragment Mono";
+        src: url("assets/fonts/7BdZvxJKUpWpvHI6sT2rPGFJguo.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; }
+
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        container-type: size;
+        background-color: #ffffff;
+        background-image:
+          linear-gradient(rgba(0, 153, 255, 0.10) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 153, 255, 0.10) 1px, transparent 1px);
+        background-size: 2cqw 2cqw, 2cqw 2cqw;
+        color: #0077cc;
+        overflow: hidden;
+      }
+
+      .hairline {
+        position: absolute;
+        left: 4cqw;
+        right: 4cqw;
+        height: 0.15cqw;
+        background: #0099ff;
+      }
+      .hairline.top { top: 3cqw; }
+      .hairline.bottom { bottom: 3cqw; }
+
+      .glitch {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 24cqw;
+        height: 100%;
+        background-color: #ffffff;
+        background-image: repeating-linear-gradient(
+          90deg,
+          #0099ff 0, #0099ff 0.5cqw,
+          transparent 0.5cqw, transparent 2cqw
+        );
+        opacity: 0.9;
+        -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 18%, #000 82%, transparent 100%);
+        mask-image: linear-gradient(180deg, transparent 0%, #000 18%, #000 82%, transparent 100%);
+      }
+
+      .kicker {
+        position: absolute;
+        top: 12cqw;
+        right: 6cqw;
+        font-family: "Fragment Mono", monospace;
+        font-size: 1.5cqw;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        text-align: right;
+      }
+
+      .wordmark {
+        position: absolute;
+        top: 16cqw;
+        right: 6cqw;
+        width: 18cqw;
+        height: 18cqw;
+        object-fit: contain;
+        object-position: right center;
+      }
+
+      .closing {
+        position: absolute;
+        top: 34cqw;
+        right: 6cqw;
+        width: 80cqw;
+        text-align: right;
+        font-family: "Cal Sans", serif;
+        font-weight: 400;
+        font-size: 5.2cqw;
+        line-height: 1.0;
+        letter-spacing: -0.01em;
+      }
+      .closing .soft { color: #005bb0; }
+
+      .reassure {
+        position: absolute;
+        bottom: 9.5cqw;
+        right: 6cqw;
+        text-align: right;
+        font-family: "Fragment Mono", monospace;
+        font-size: 1.8cqw;
+        letter-spacing: 0.08em;
+      }
+
+      .pagenum {
+        position: absolute;
+        bottom: 1.2cqw;
+        right: 4cqw;
+        font-family: "Fragment Mono", monospace;
+        font-size: 1.3cqw;
+        letter-spacing: 0.06em;
+      }
+
+      .anim { will-change: transform, opacity; }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="frame4"
+      data-layout-allow-overlap
+      data-duration="7"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div class="hairline top"></div>
+      <div class="hairline bottom"></div>
+      <div class="glitch"></div>
+
+      <div class="kicker anim" data-anim="kicker" data-layout-allow-overlap>GET STARTED</div>
+      <img class="wordmark anim" data-anim="mark" src="assets/h1nrvsav2h8jownvwasdy8gfjk.png" alt="Cal.com" />
+      <div class="closing anim" data-anim="closing" data-layout-allow-overlap>
+        Get started with<br /><span class="soft" data-layout-allow-overlap>Cal.com.</span>
+      </div>
+      <div class="reassure anim" data-anim="reassure" data-layout-allow-overlap>No credit card required.</div>
+
+      <div class="pagenum" data-layout-allow-overlap>04 / 04</div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js" integrity="sha384-sG0Hv1tP1lZCk9KQmrIbY/XNwi+OY84GQqhMscbnsoBFqAz8KNCil1kvfL3Hbbk2" crossorigin="anonymous"></script>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      tl.from('[data-anim="kicker"]', { opacity: 0, x: 40, duration: 0.5, ease: "power2.out" });
+      tl.from('[data-anim="mark"]', { opacity: 0, scale: 0.85, duration: 0.7, ease: "power3.out", transformOrigin: "right center" }, "-=0.3");
+      tl.from('[data-anim="closing"]', { opacity: 0, y: 40, duration: 0.7, ease: "power3.out" }, "-=0.4");
+      tl.from('[data-anim="reassure"]', { opacity: 0, y: 20, duration: 0.6, ease: "power2.out" }, "-=0.3");
+      window.__timelines["frame4"] = tl;
+    </script>
+  </body>
+</html>

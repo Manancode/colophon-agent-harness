@@ -1,0 +1,29 @@
+{
+  "provider": "a local TTS model",
+  "speed": 1,
+  "lines": [
+    {
+      "id": "01",
+      "text": "Booking a meeting shouldn't take six emails."
+    },
+    {
+      "id": "02",
+      "text": "Cal.com is the better way to schedule your meetings."
+    },
+    {
+      "id": "03",
+      "text": "Fully customizable. Built for individuals, for businesses taking calls, and for developers building scheduling platforms where users meet users."
+    },
+    {
+      "id": "04",
+      "text": "Get started with Cal.com. No credit card required."
+    }
+  ],
+  "bgm": {
+    "mode": "retrieve",
+    "query": "subtle",
+    "blob": "Scheduling that respects your time",
+    "arc": "Hook → Product → Capability → CTA"
+  },
+  "voice": "am_michael"
+}

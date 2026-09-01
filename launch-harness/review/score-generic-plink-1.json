@@ -1,0 +1,124 @@
+{
+  "attempt": 1,
+  "route": "category-3-remotion",
+  "engine": "generic-template (props-driven, no product hardcoding)",
+  "artifact": "./engine/remotion-generic/out/launch.mp4",
+  "doc_only_test": {
+    "verdict": "PASS",
+    "method": "A fresh sub-agent was given ONLY the two files (the doc + the Plink brief), instructed not to read any TSX, any existing brief.json, or any other project file. It rendered the MP4 from the doc's commands alone.",
+    "sub_agent_report": "Real Plink video, 10.048s, 1920x1080, 0 RankPal matches across 3 stills, root pixel (5,5) = (255,255,255). Only one guess (brief.json path) and three minor doc defects were surfaced, none blocking. Doc + brief alone is sufficient to produce the artifact.",
+    "doc_defects_fixed": [
+      "Doc §10: corrected 'silent cut (no audio)' to 'silent cut — there IS an AAC stereo stream at -91.0 dB (digital silence) but not meant to be heard.'",
+      "Doc §3 / §10: stated the brief.json path explicitly (engine root) — the sub-agent had to guess.",
+      "Doc §8: removed stray trailing '--' on the npm run still command line.",
+      "Doc §1 / brief: updated filename pointer from tools/remotion-pipeline.md to tools/generic-template-pipeline.md (the actual doc). The original remotion-pipeline.md is a different, RankPal-targeted document."
+    ]
+  },
+  "brief": "Plink (test product). Three features, one tagline, brand color #7C5CFF, 10s, optional ctaUrl. No .tsx, no render.json, no scene graph. The DOC-ONLY agent authored brief.json (with ctaUrl: 'plink.app') and ran `npm run render` from the doc's commands alone.",
+  "probe": {
+    "duration_s": 10.048,
+    "frames": 300,
+    "fps": 30,
+    "video": "h264 1920x1080, 825 kB",
+    "audio": "aac 48000 Hz stereo, mean/max volume -91.0 dB (digital silence, as designed)",
+    "frames_sampled": "./review/plink-frames/"
+  },
+  "product_leak_gate": {
+    "method": "ocr_frames.py --grep rankpal across 5 stills (f20, f96, f150, f221, f260)",
+    "rankpal_matches": 0,
+    "rankpal_exit": 0,
+    "plink_matches": 5,
+    "plink_exit": 1,
+    "verdict": "PASS — no foreign product rendered; Plink renders in every scene"
+  },
+  "scene_evidence": {
+    "title_f20_ocr":   ["INTRODUCING", "Plink", "Turn your daily habits into a pinball game you actually want to play"],
+    "mid_xf_f96_ocr":  ["What Plink does", "INTRODUCING", "Plink", "Turn your daily habits into a pinball game you actually want to play"],
+    "feature_f180_ocr": ["What Plink does", "1 Daily routines become pinball launches", "2 Streaks unlock multiball", "3 Friends' boards sync every week"],
+    "mid_xf_f221_ocr":  ["What Plink does", "Daily", "routines", "become", "pinball", "launches", "Streaks", "unlock", "multiball", "Friends'", "boards", "sync", "every", "week", "Get Plink"],
+    "cta_f260_ocr":    ["Get Plink", "plink.app", "Plink"]
+  },
+  "root_opacity": {
+    "corner_5_5": "rgb(255, 255, 255)",
+    "verdict": "opaque white, no transparency/tint/gradient on the composition root"
+  },
+  "brand_presence": {
+    "accent_target_hex": "#7C5CFF -> rgb(124, 92, 255)",
+    "title_f20_accent_px_tolerance40": 18756,
+    "feature_f180_accent_px_tolerance40": 7079,
+    "cta_f260_accent_px_tolerance40": 33365,
+    "title_coverage_pct": 0.90,
+    "feature_coverage_pct": 0.34,
+    "cta_coverage_pct": 1.61,
+    "note": "Feature scene was 0.07% in the first render (16px dots only); rebuilt with 56px numbered accent chips. Now in the same order as the other two scenes."
+  },
+  "hook_coverage": {
+    "f045_nonbg_pct": 2.77,
+    "f090_nonbg_pct": 2.75,
+    "threshold": 2.0,
+    "verdict": "both > 2%, hook is on screen from t=0"
+  },
+  "motion_continuity": {
+    "method": "content-restricted consecutive-frame diff (only pixels non-white in either frame). 300 frames, every pair.",
+    "full_video_worst": 17.55,
+    "worst_pair": "f131->f132 (bullet-1 slide-in, smooth ramp)",
+    "hard_cut_anything_above_60": 0,
+    "anything_above_25_gradual_band": 0,
+    "band_census_299_pairs": {
+      "above_25_gradual_ceiling": 0,
+      "above_60_hard_cut": 0,
+      "below_2_static_holds": 183,
+      "note": "measured on the presented artifact (828012 bytes) after the doc-only sub-agent's render, not on an earlier intermediate render"
+    },
+    "boundary_1_title_to_feature": {
+      "dissolve_window": "f90..f102 (13 frames)",
+      "dissolve_values": "11.07, 11.18, 11.43, 11.63, 11.81, 12.15, 12.11, 12.69, 12.48, 13.39, 12.82, 13.29",
+      "hold_expiry_frame": "f102->f103",
+      "hold_expiry_value": 0.68,
+      "verdict": "clean gradual ramp, no pop at the handoff"
+    },
+    "boundary_2_feature_to_cta": {
+      "dissolve_window": "f210..f222 (13 frames)",
+      "dissolve_values": "13.44, 11.69, 9.24, 10.46, 11.39, 12.18, 12.40, 12.29, 12.19, 12.01, 11.69, 11.42",
+      "hold_expiry_frame": "f222->f223",
+      "hold_expiry_value": 2.83,
+      "verdict": "clean gradual ramp, no pop at the handoff. In the pre-fix version this was 57.24 — a near-hard cut. Fixed by making each scene Frame opaque and extending the hold by +1 so the outgoing scene is still present on the frame the incoming reaches opacity 1.",
+      "correction_note": "An earlier draft of this scorecard mislabelled f221->f222 as the hold-expiry frame. With hold = solo + XF_FRAMES + 1, the feature Sequence covers f90..f222, so the expiry is f222->f223. f221->f222 (11.42) is mid-dissolve."
+    }
+  },
+  "repairs_applied_this_attempt": [
+    "TitleScene / FeatureScene / CtaScene: added required backgroundColor prop, threaded from LaunchTemplate.renderScene. Each scene Frame is now opaque, so the cross-dissolve has a fully-opaque base to fade over. The 57.24 hard-cut pop at f221->f222 is gone.",
+    "LaunchTemplate positioned-scenes: hold is now solo + XF_FRAMES + 1 (was solo + XF_FRAMES). The +1 covers the frame on which the incoming scene reaches opacity 1; without it the outgoing scene vanished one frame early.",
+    "FeatureScene: bullet slide-in eased from 28px/22 frames to 22px/28 frames. The first render peaked at 27.75 content-diff (above the 2-25 gradual band); the new value peaks at 17.55 across the full video.",
+    "FeatureScene: 16px accent dots replaced with 56px numbered accent chips. Feature scene accent coverage went 0.07% -> 0.34%, into the same order as title (0.90%) and CTA (1.61%).",
+    "FeatureScene: bullet column is now flex: 1, max-width 1200px, with the text node flex: 1 + min-width 0. First render wrapped each feature per-word because the column collapsed to content width when no screenshot was provided.",
+    "CtaScene pill: removed the spring({frame: max(0, frame - 6)}) start delay. Measured: f208->f216 content-diff 0.00 in the prior version — the incoming scene contributed nothing for 6 frames of its own dissolve."
+  ],
+  "dimension_scores": {
+    "hook_and_value_clarity":               5,
+    "product_capability_accuracy":          5,
+    "brand_consistency_and_visual_craft":   4,
+    "motion_continuity_and_pacing":         5,
+    "narration_quality_and_audio":          null,
+    "subtitle_readability_and_optional_playback": null,
+    "launch_readiness_and_call_to_action":  5,
+    "brief_length_match":                   5
+  },
+  "evidence": {
+    "hook_and_value_clarity": "S: title scene renders 'INTRODUCING / <name> / <tagline>'. | P (OCR @f20): INTRODUCING / Plink / Turn your daily habits into a pinball game you actually want to play. P (sample): f045 2.77% non-bg, f090 2.75% non-bg. Both > 2% threshold. Hook has product name + value prop + plain language in < 3s.",
+    "product_capability_accuracy": "S: every string comes from the brief — name, tagline (verbatim from brief's one-line description), the three features (verbatim from brief's feature list), 'Get Plink' (default ctaText). No third-party URL, no invented claim. | P (OCR @f180): '1 Daily routines become pinball launches' / '2 Streaks unlock multiball' / '3 Friends' boards sync every week' = exact brief strings. | product_leak_gate: 0 rankpal matches, 5/5 plink matches.",
+    "brand_consistency_and_visual_craft": "S: backgroundColor='#ffffff' on the composition root, accentColor='#7C5CFF' threaded into every scene, one root <AbsoluteFill backgroundColor={...}>, each scene Frame is now opaque (recent repair). No opacity, no filter, no mask, no blend, no gradient. Single accent value used throughout. | P: root corner(5,5) = (255,255,255) opaque white. Accent present in all 3 scenes: title 18,756 px (0.90%), feature 7,079 px (0.34%, up from 0.07% pre-repair), CTA 33,365 px (1.61%). | note: feature scene still thinnest of the three — visible, functional, but not lavish. 4/5.",
+    "motion_continuity_and_pacing": "S: every scene wrapped in <Crossfade fadeIn={i>0}>; non-final scenes held past solo end so the incoming has an opaque frame to dissolve into (recent repair: solo + XF_FRAMES + 1, not solo + XF_FRAMES). | P (content-restricted diff, 300 frames): worst 17.55, zero frames above 25 (the gradual-good band), zero above 60 (hard-cut band). Boundary 1 ramp 11.0-13.3, boundary 2 ramp 9.3-13.3, hold-expiry frames 0.68 and 3.07. Prior version had a 57.24 hard-cut pop at f221->f222 — eliminated.",
+    "narration_quality_and_audio": "N/A — na_reason: brief did not request narration or voiceover; spec lists only name + 1-line description + color + 3 features. Silent cut is the requested output. Audio: stream exists, mean/max -91.0 dB (digital silence).",
+    "subtitle_readability_and_optional_playback": "N/A — na_reason: brief did not request captions; default silent cut is correct for Category 3 motion-only.",
+    "launch_readiness_and_call_to_action": "S: CTA scene text = 'Get <name>' (default ctaText; brief gave no override) + product name as footer. Action verb present. | P (OCR @f260): 'Get Plink / Plink'. CTA scene runs f210..f300 = 3.0s (>= 1.5s threshold).",
+    "brief_length_match": "S: brief.json declares durationInFrames 300. Root composition uses brief value. | M (ffprobe): 10.048s / 300 frames / 30fps. Brief did not specify a length; pipeline default of 10s applied and matches."
+  },
+  "na_dimensions": {
+    "narration_quality_and_audio": "brief did not request narration or voiceover; spec lists only name + 1-line description + color + 3 features",
+    "subtitle_readability_and_optional_playback": "brief did not request captions; default silent cut is correct for Category 3 motion-only"
+  },
+  "blockers": [],
+  "localized_repairs": [],
+  "verdict": "pass"
+}

@@ -1,0 +1,13 @@
+launch-video
+============
+
+This repository contains the launch-video harness: the routing skill, the
+review gate, the runbook, and the evaluation artifacts from our first
+end-to-end test.
+
+The local render engines the harness drives are NOT included in this
+repository. They are third-party tools pulled in separately for local
+testing and are excluded via .gitignore. This repo is the method and the
+quality gate — not the engines themselves.
+
+Licensed under the MIT License. See LICENSE.

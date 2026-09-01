@@ -1,0 +1,85 @@
+{
+  "attempt": 4,
+  "route": "category-3-remotion",
+  "artifact": "your product video project/out/attempt4-670f-rekeyed-audio.mp4",
+  "contact_sheet": "your product video project/out/a4-contact-sheet.png",
+  "brief": "Two changes only: (1) delete BRAND_BLUE #0562ef from source entirely, #0ea5e9 is the only accent; (2) re-key the audio bed — rebuild audioSceneStarts from the current 3-scene scenesInOrder and add the transition SFX at f451 to match the one at f221. Then re-render and re-score all 8 dimensions. Instruction: if any dimension comes back sub-4, report which and why BEFORE touching anything else.",
+  "probe": {
+    "duration_s": 22.378667,
+    "frames": 670,
+    "fps": 30,
+    "video": "h264 1920x1080",
+    "audio": "aac 48000 Hz stereo, peak -11.8 dBFS, mean -30.1 dB, integrated -30.1 LUFS, LRA 6.6 LU",
+    "size_bytes": 2806351
+  },
+  "change_1_brand_blue_deleted": {
+    "status": "DONE",
+    "source_audit": "grep for BRAND_BLUE | #0562ef | rgb(5,98,239) | #eef4ff across the whole project: the only surviving occurrence is a comment line documenting the removal. Confined to src/LaunchSpecJson.tsx; nothing in render.json or the generated manifests.",
+    "what_was_removed": [
+      "const BRAND_BLUE = '#0562ef'",
+      "const BRAND_BLUE_SOFT = '#eef4ff' (declared but never used — dead code)",
+      "6 identifier references -> retargeted to BRAND_ACCENT",
+      "14 hardcoded rgba(5, 98, 239, ...) glow/tint/border values -> rgb(14, 165, 233, ...). These were the same colour spelled in RGB form and would have survived a naive identifier-only delete."
+    ],
+    "pixel_verification": "Changes scene is where BRAND_BLUE was actually painted. f305: accent 322 -> 777, old blue 443 -> 0. f365: accent 322 -> 802, old blue 470 -> 0. 322 + 443 = 765 vs 777 measured, and 322 + 470 = 792 vs 802 measured — the former BRAND_BLUE pixels converted to accent with nothing lost and nothing left behind.",
+    "residual_blue_explained": "Title/CTA frames still count ~478 / ~135 px within tol-30 of rgb(5,98,239), but these are NOT a second colour. Located by bounding box: c145 sits in x936-991 y607-627 and c669 in x950-981 y608-623 — text-sized regions — and the sampled pixels read rgb(22,128,212), rgb(32,127,241), rgb(20,126,238): subpixel-antialiasing fringes on the edges of the accent-coloured text. Count is unchanged from attempt 3 (467 -> 478, 131 -> 135), i.e. it predates the delete and would appear with any accent colour. Confirmed by the fact that the changes scene, where the real BRAND_BLUE fills lived, went to exactly 0."
+  },
+  "change_2_audio_rekeyed": {
+    "status": "DONE — structural fix landed, but the cue itself is too quiet to function (see dimension 5)",
+    "audioSceneStarts": "Now derived from positionedScenes via reduce, so the SFX schedule is generated from the scenes that actually render and cannot drift from the picture again. Yields {title: 0, changes: 221, final: 451}. Previously it hardcoded the original 7-scene layout, where 'final' resolved to frame 1821 in a 670-frame video — which is exactly why the boundary-2 whoosh never fired.",
+    "cues_removed": "All cues belonging to the four scenes that no longer render: draft-prompt (zoom-swipe, PromptTypingAudio, lock-click 0.62, send-whoosh), thinking-bridge (6 phrase pops, 3 agent pops, success-chime), founder-message (notify-boosted 0.35, lock-click 0.58), competitor-prompt (zoom-swipe, PromptTypingAudio, lock-click 0.62, send-whoosh). Under the old map these fired at stale offsets — e.g. typing ticks played over the changes scene where nothing is being typed.",
+    "cues_kept": "title riser @12, title pop @88; changes paper-slide @229, hard-pop @239, 4 bullet pops @269/283/297/311, sparkle-whoosh @329; final riser @465, App Store long-pop @607, logo-pop @607. All verified inside 0-670 with no overflow past a scene end.",
+    "transition_sfx": "send-whoosh 0.065 at changesStart (221) and finalStart (451) — identical file, volume and duration, so f451 now matches f221 by construction. f451 previously had no whoosh scheduled at all.",
+    "why_it_still_isnt_a_cue": "Differential RMS (attempt 4 minus attempt 3) across the f451 window shows only a uniform level step (+0.9 dB before, -2.2 dB after), which is fully explained by the bg-music curve changing from 0.24 to 0.14 — there is no SFX transient. Measured directly against local baseline: f221 rises +8.0 dB and f451 rises +0.1 dB. But the f221 number is itself mostly the music step (0.10 -> 0.21 = +6.4 dB), leaving the whoosh at roughly +1.6 dB at BOTH boundaries."
+  },
+  "dimension_scores": {
+    "hook_and_value_clarity":             4,
+    "product_capability_accuracy":        4,
+    "brand_consistency_and_visual_craft": 4,
+    "motion_continuity_and_pacing":       5,
+    "narration_quality_and_audio":        3,
+    "subtitle_readability_and_optional_playback": null,
+    "launch_readiness_and_call_to_action": 4,
+    "brief_length_match":                 5
+  },
+  "evidence": {
+    "hook_and_value_clarity": "OCR (P): f025/f065 'Introducing RankPal'; f085 onward 'Introducing RankPal / Claude for / App Store'. Full three-line hook lands at t=2.83s, inside the 3s window. Docked 1: f005 reads 0 text blocks (~0.2s dead air at the top) and the delivered hook copy is not render.json's declared line. Unchanged from attempt 3 — not in scope, scoring carried forward.",
+    "product_capability_accuracy": "OCR (P): 'RankPal MCP / a competitor app changed 4 tracked fields' with four before->after field diffs, rating count now reading 5,220,813 -> 5,224,981 (lakh-grouping copy defect fixed in attempt 3 and still correct here). Capability demonstrated, not asserted. Docked 1 for density: 35 simultaneous text blocks in one 7.7s beat.",
+    "brand_consistency_and_visual_craft": "P: single accent #0ea5e9 now paints every scene that carried colour — title 5,198 px (0.25%), changes 777-802 px (0.04%), CTA 9,707 px (0.47%). The competing #0562ef is gone from source and measures 0 in the changes scene where it used to render. Held at 4 rather than 5 on a NEW finding: accent is 0 px across f005-f085, i.e. the entire 0-2.83s hook carries no brand colour at all — it first appears at f105. That is the most-watched stretch of a launch video.",
+    "motion_continuity_and_pacing": "M: YAVG all 670 frames. Global min 39.2 (no black trough; was 14.6 under the old dip-to-black). Largest single-frame luma jump 18.47. Boundary 1: flat 39.38 through f221 then a 12-step linear ramp to 250.11. Boundary 2: flat 249.27 through f451 then a 12-step linear descent to 39.20. Both ramps are clean and symmetric; neither cut appears as a discontinuity.",
+    "narration_quality_and_audio": "M: aac 48kHz stereo, no clipping, but integrated -30.1 LUFS and peak -11.8 dBFS. The audio bed is now structurally correct (see change_2) but scores 3 on two measured problems, both reported rather than fixed per instruction.",
+    "subtitle_readability_and_optional_playback": "n/a — audio is music + SFX only, no dialogue or narration, and no caption track was requested. On-screen text is scene-internal UI/title copy, measured under hook / capability / CTA instead. Recorded as null; not scored.",
+    "launch_readiness_and_call_to_action": "OCR (P) f669, the final frame: 'rankpal.app / Accelerate / App Store'. P: 9,707 accent px (0.47%), holding through the last frame. Held at 4 rather than 5: the CTA is small and there is no explicit action verb — 'Accelerate' is a tagline, not an instruction.",
+    "brief_length_match": "M: 670 frames / 22.378667s. S: render.json declares durationInFrames 670. Exact match, unchanged by this attempt's edits."
+  },
+  "na_dimensions": {
+    "subtitle_readability_and_optional_playback": "no dialogue/narration; no captions requested"
+  },
+  "sub4_report": {
+    "dimension": "narration_quality_and_audio",
+    "score": 3,
+    "reason_1_cue_is_inaudible": "The transition whoosh is authored at volume 0.065. Measured against local baseline it contributes roughly +1.6 dB at BOTH f221 and f451 — below the level at which it reads as a scene cue. The f451 cue is now correctly SCHEDULED (it previously resolved to frame 1821 and never fired), so 'match f221' is satisfied structurally, but matching f221 means matching something that was never audible either. SELF-CORRECTION: in attempt 3 I scored boundary 1 as 'has a cue' based on a +8.0 dB rise; that rise was ~6.4 dB of bg-music level step (0.10 -> 0.21) plus ~1.6 dB of SFX. The attempt-3 claim was wrong and is corrected here.",
+    "reason_2_programme_too_quiet": "Integrated loudness is -30.1 LUFS against a -14 LUFS streaming target — 16 LU low. Peak is -11.8 dBFS. This is mostly PRE-EXISTING: attempt 3 measured -29.0 LUFS, because the bg-music bed is authored at volume 0.10-0.21 against a source the code comment claims is mastered to -14 LUFS, so the bed lands around -34 LUFS. The in-code comment 'these values sit correctly in the mix' is wrong. My cue removal cost a further 1.1 LU integrated and 6.4 dB of peak, because the loud cues (lock-click 0.62, notify-boosted 0.35) belonged to the four scenes that no longer render and nothing replaced them.",
+    "proposed_fix_not_applied": [
+      "Raise the transition whoosh from 0.065 to ~0.25 at both boundaries so it registers as a real cue (~+12 dB over baseline).",
+      "Re-level the whole bed to -14 LUFS: raise bg-music volumes from 0.10/0.21/0.14 to roughly 0.45/0.95/0.63, then re-check peak stays under -3 dBFS, or apply a single loudnorm pass on the finished mix.",
+      "Optionally add one mid-weight cue back into the changes scene so the 7.7s middle beat is not carried by music alone."
+    ]
+  },
+  "blockers": [
+    "Audio: -30.1 LUFS, 16 LU below the -14 LUFS streaming target (pre-existing, worsened 1.1 LU by removing cues from deleted scenes).",
+    "Audio: transition SFX at 0.065 contributes ~1.6 dB — not a functional cue at either boundary.",
+    "Brand: accent is 0 px for the entire 0-2.83s hook (f005-f085); first appears at f105.",
+    "Hygiene: 'a third-party site/business/nate-barbershop' still sits in render.json and src/generated/scene-manifest.json. Verified unreachable at render time (0 OCR matches across 35 frames again in this attempt) but should be deleted.",
+    "Dead code: PromptTypingAudio is now orphaned — both its call sites were in the removed scene cues."
+  ],
+  "localized_repairs": [
+    "audio loudness + whoosh level — the three items in sub4_report.proposed_fix_not_applied",
+    "brand: extend the accent into the hook (f005-f085) so the first 3 seconds carry brand colour",
+    "hygiene: strip the a third-party site/barbershop strings from render.json and scene-manifest.json",
+    "hygiene: delete the orphaned PromptTypingAudio component"
+  ],
+  "scored_average": 4.14,
+  "verdict": "fail",
+  "verdict_reason": "7 of 8 dimensions at or above the 4/5 floor (hook 4, capability 4, brand 4, motion 5, CTA 4, length 5; subtitle n/a). Both requested changes landed and are verified: BRAND_BLUE #0562ef is deleted from source and measures 0 in the pixels where it used to render, and audioSceneStarts is now derived from the live 3-scene list with a transition SFX scheduled at f451. narration_quality_and_audio remains at 3 on the two measured findings above. Per the gate an individual dimension below 4 cannot be offset by the average. Per instruction, no further changes were made — awaiting direction on the audio fix."
+}

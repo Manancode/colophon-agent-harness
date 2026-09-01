@@ -1,0 +1,18 @@
+{
+  "name": "Plink",
+  "tagline": "Turn your daily habits into a pinball game you actually want to play",
+  "accentColor": "#7C5CFF",
+  "backgroundColor": "#ffffff",
+  "durationInFrames": 300,
+  "fps": 30,
+  "width": 1920,
+  "height": 1080,
+  "features": [
+    "Daily routines become pinball launches",
+    "Streaks unlock multiball",
+    "Friends' boards sync every week"
+  ],
+  "screenshotUrl": null,
+  "ctaText": "Get Plink",
+  "ctaUrl": "plink.app"
+}

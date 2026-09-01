@@ -1,0 +1,42 @@
+# Third-party render engines (copied locally for testing, not open-sourced)
+vendor/
+
+# Agent / tooling private state
+.workbuddy-ai/
+
+# Dependencies
+node_modules/
+
+# Build artifacts & media binaries
+*.mp4
+*.wav
+*.mov
+*.mkv
+*.avi
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+renders/
+capture/
+out/
+dist/
+plink-frames/
+
+# Python
+__pycache__/
+*.pyc
+.cache/
+
+# Lockfiles (may reference excluded engines)
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# OS
+.DS_Store
+
+# Local secrets / env (keep harness.env.example instead)
+.env
+*.local
