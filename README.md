@@ -84,6 +84,16 @@ You don't need an API key for the harness or the checks. Both run with zero mode
 
 colophon is an instrument, not an employee: it reports what's wrong, it doesn't decide what to do. TrueForge is the harness, the loop, the tool calling, the sandbox. colophon runs inside it as an MCP tool server. Delete `mcp_server.py` and TrueForge and `colophon deliver` still runs end to end; anything that speaks MCP over HTTP can drive the checks. See ADR 0010.
 
+## launch-harness
+
+This repo also ships `launch-harness/` — the agent-native harness that actually drives video generation. It's the other half of the loop: colophon (above) is the QA instrument; launch-harness is the generation side.
+
+You hand it a brief. It routes to a single local, key-free render engine — one fact-based branch decides: footage present → cut it; absent → compose from scratch — then renders, then grades its own work against an **8-dimension gate** (hook, capability accuracy, brand consistency, motion, narration, subtitles, CTA, length). Every dimension must score at least 4/5, backed by evidence (pixel samples, media probes, source checks), never "looks good to me." Under 4 and it goes back to fix that one thing; no averaging past a failure.
+
+Two rules baked in from the start: telemetry stays off (nothing leaves the machine) and no new API keys.
+
+`launch-harness/SKILL.md` is the brain, `launch-harness/RUNBOOK.md` is the end-to-end test, `launch-harness/review/` holds the gate and the real scorecards. Merged in PR #3.
+
 ## Design decisions
 
 The shape of the system is captured in ten ADRs under `docs/adr/`. Read them before proposing a change:
