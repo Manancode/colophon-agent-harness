@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      @font-face {
+        font-family: "Cal Sans";
+        src: url("assets/fonts/fdN99sWUv3gWqXxqqRBStFs04A.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Fragment Mono";
+        src: url("assets/fonts/7BdZvxJKUpWpvHI6sT2rPGFJguo.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; }
+
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        container-type: size;
+        background-color: #ffffff;
+        background-image:
+          linear-gradient(rgba(0, 153, 255, 0.10) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 153, 255, 0.10) 1px, transparent 1px);
+        background-size: 2cqw 2cqw, 2cqw 2cqw;
+        color: #0077cc;
+        overflow: hidden;
+      }
+
+      .hairline {
+        position: absolute;
+        left: 4cqw;
+        right: 4cqw;
+        height: 0.15cqw;
+        background: #0099ff;
+      }
+      .hairline.top { top: 3cqw; }
+      .hairline.bottom { bottom: 3cqw; }
+
+      .topbar {
+        position: absolute;
+        top: 6cqw;
+        left: 4cqw;
+        right: 4cqw;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        border-bottom: 0.15cqw solid #0099ff;
+        padding-bottom: 1cqw;
+      }
+      .topbar .title {
+        font-family: "Cal Sans", serif;
+        font-size: 4.6cqw;
+        letter-spacing: -0.01em;
+      }
+      .topbar .tag {
+        font-family: "Fragment Mono", monospace;
+        font-size: 1.4cqw;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .beats {
+        position: absolute;
+        top: 20cqw;
+        left: 4cqw;
+        right: 4cqw;
+        bottom: 8cqw;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 3cqw;
+      }
+      .beat {
+        position: relative;
+        border: 0.12cqw solid rgba(0, 153, 255, 0.30);
+        padding: 2.4cqw;
+        display: flex;
+        flex-direction: column;
+      }
+      .beat .idx {
+        font-family: "Fragment Mono", monospace;
+        font-size: 1.4cqw;
+        letter-spacing: 0.1em;
+      }
+      .beat .name {
+        font-family: "Cal Sans", serif;
+        font-size: 3.6cqw;
+        margin-top: 0.6cqw;
+        letter-spacing: -0.01em;
+      }
+      .beat .shot {
+        margin-top: auto;
+        width: 100%;
+        border-top: 0.12cqw solid rgba(0, 153, 255, 0.30);
+        padding-top: 1.4cqw;
+      }
+      .beat .shot img {
+        width: 100%;
+        display: block;
+        border: 0.1cqw solid rgba(0, 153, 255, 0.30);
+      }
+
+      .pagenum {
+        position: absolute;
+        bottom: 1.2cqw;
+        right: 4cqw;
+        font-family: "Fragment Mono", monospace;
+        font-size: 1.3cqw;
+        letter-spacing: 0.06em;
+      }
+      .anim { will-change: transform, opacity; }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="frame3"
+      data-layout-allow-overlap
+      data-duration="10.5"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div class="hairline top"></div>
+      <div class="hairline bottom"></div>
+
+      <div class="topbar anim" data-anim="topbar" data-layout-allow-overlap>
+        <div class="title" data-layout-allow-overlap>Fully customizable.</div>
+        <div class="tag">BUILT FOR EVERYONE</div>
+      </div>
+
+      <div class="beats">
+        <div class="beat anim" data-anim="b1">
+          <div class="idx">001 · INDIVIDUALS</div>
+          <div class="name">For you</div>
+          <div class="shot"><img src="assets/image-39.png" alt="" /></div>
+        </div>
+        <div class="beat anim" data-anim="b2">
+          <div class="idx">002 · BUSINESSES</div>
+          <div class="name">Taking calls</div>
+          <div class="shot"><img src="assets/scroll-031.png" alt="" /></div>
+        </div>
+        <div class="beat anim" data-anim="b3">
+          <div class="idx">003 · DEVELOPERS</div>
+          <div class="name">Build platforms</div>
+          <div class="shot"><img src="assets/image-38.png" alt="" /></div>
+        </div>
+      </div>
+
+      <div class="pagenum" data-layout-allow-overlap>03 / 04</div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js" integrity="sha384-sG0Hv1tP1lZCk9KQmrIbY/XNwi+OY84GQqhMscbnsoBFqAz8KNCil1kvfL3Hbbk2" crossorigin="anonymous"></script>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      tl.from('[data-anim="topbar"]', { opacity: 0, y: -20, duration: 0.5, ease: "power2.out" });
+      tl.from('[data-anim="b1"]', { opacity: 0, y: 40, duration: 0.6, ease: "power3.out" }, "-=0.1");
+      tl.from('[data-anim="b2"]', { opacity: 0, y: 40, duration: 0.6, ease: "power3.out" }, "-=0.45");
+      tl.from('[data-anim="b3"]', { opacity: 0, y: 40, duration: 0.6, ease: "power3.out" }, "-=0.45");
+      window.__timelines["frame3"] = tl;
+    </script>
+  </body>
+</html>

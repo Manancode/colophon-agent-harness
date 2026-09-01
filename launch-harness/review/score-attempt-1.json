@@ -1,0 +1,50 @@
+{
+  "attempt": 1,
+  "route": "category-3-remotion",
+  "routing_evidence": "Test request 'make me a 20-second launch video for RankPal'. No supplied media file, no narration/'cut to' language, fully drawable (UI + kinetic text) -> CATEGORY 3 (Remotion). Deterministic; no clarifying question needed.",
+  "artifact": "your product video project/out/launchspec-json.mp4",
+  "contact_sheet": "your product video project/out/contact-sheet.png",
+  "frames_reviewed": [
+    "your product video project/out/review-f45.png",
+    "your product video project/out/review-f90.png",
+    "your product video project/out/review-f210.png",
+    "your product video project/out/review-f1050.png",
+    "your product video project/out/review-f1500.png",
+    "your product video project/out/review-f2000.png",
+    "your product video project/out/review-f2080.png",
+    "your product video project/out/seq/s*.png (140 @ 2fps)",
+    "your product video project/out/bnd/b*.png (51 @ 30fps at one boundary)"
+  ],
+  "dimension_scores": {
+    "hook_and_value_clarity":                4,
+    "product_capability_accuracy":           4,
+    "brand_consistency_and_visual_craft":    2,
+    "motion_continuity_and_pacing":          2,
+    "narration_quality_and_audio":           4,
+    "subtitle_readability_and_optional_playback": null,
+    "launch_readiness_and_call_to_action":   3
+  },
+  "evidence": {
+    "hook_and_value_clarity": "S: LaunchSpecJson.tsx:337 'Introducing RankPal', :364 'App Store' span present in TITLE scene. P: f45/f90 dark canvas (#262626) with 99.2% non-white coverage -> content on screen in first 3s. LEGIBILITY not OCR-verified (no OCR in env) -> partial needs_visual_review.",
+    "product_capability_accuracy": "S: rendered copy demonstrates @rankpal doing $4.99 pricing, competitor keywords, Arabic screenshots, App Store update (DRAFT_PROMPT_TEXT) + 'what a competitor app shipped today' (COMPETITOR_PROMPT_TEXT) + founder/changes/final scenes. Matches known RankPal MCP capability set. NOTE: no formal brief doc was supplied, so 'cited brief section' cannot be checked. SEPARATE finding: delivered 70.0s, brief asked 20s (see blockers).",
+    "brand_consistency_and_visual_craft": "S+P: render.json declares backgroundColor 'white' + accentColor '#0ea5e9'. P: 6 of 7 sampled frames are dark #262626 (rgb 38,38,38 ~45% of px), NOT white. Accent #0ea5e9 = 0 px in 6/7 frames, 323 px (0.02%) in 1. Off-brand #8b5cf6 = 0 px throughout. Brand background + accent are essentially unapplied in the render.",
+    "motion_continuity_and_pacing": "P: hard cuts at ALL 7 scene boundaries. 2fps diff >60 at t~8,21,41,48,53,61s. 30fps check at BRIDGE->FOUNDER (frame 1236): b011->b012 = 81.73 HARD CUT (none of the gradual 2-25 crossfade seen) -> genuine abrupt cut, no crossfade/push between scenes. In-scene animations are smooth; only the scene-to-scene change is hard.",
+    "narration_quality_and_audio": "M: aac stream present, peak -5.4 dB (no clipping), mean -28.0 dB -> clean music+SFX bed. S: TSX embeds bg-music.wav, key-laptop.wav, lock-click.wav, cinematic-riser.wav (no voiceover). render.json audioOptions all false yet audio IS baked in (doc/render mismatch). No narration and brief didn't require it. Subjective musical fit needs_visual_review (cannot hear).",
+    "subtitle_readability_and_optional_playback": "n/a — deliverable has no dialogue/narration and the brief did not request captions. Works fully without subtitles. (Recorded as null; not scored.)",
+    "launch_readiness_and_call_to_action": "S: final scene (FINAL_SCENE_FRAMES, frames 1821-2101, t60.7-70.0s) shows RankPal/App Store branding but no explicit 'install'/'visit'/'sign up'/'rankpal.com' CTA found in TSX grep. Partial needs_visual_review (cannot OCR the ending frame)."
+  },
+  "na_dimensions": {
+    "subtitle_readability_and_optional_playback": "no dialogue; brief did not request captions"
+  },
+  "blockers": [
+    "BRIEF MISMATCH (new, not in the 7-dim contract): delivered 70.0s / 2101 frames; brief asked for 20s. The composition hardcodes a 7-scene narrative (TITLE 221 + DRAFT 395 + BRIDGE 620 + FOUNDER 190 + COMPETITOR 165 + CHANGES 230 + FINAL 280 = 2101) and IGNORES render.json's durationInFrames:670. Recommend adding a 'brief_compliance_and_length' dimension to the gate.",
+    "brand color unapplied: declared white bg + #0ea5e9 accent render as dark #262626 with 0px accent -> off-brand canvas."
+  ],
+  "localized_repairs": [
+    "motion_continuity_and_pacing (score 2): add a crossfade/push between the 7 scenes in LaunchSpecJson.tsx (e.g. wrap each Scene Sequence with a transition, or insert <TransitionSeries>). Currently scene-to-scene is a hard cut.",
+    "brand_consistency_and_visual_craft (score 2): either set the canvas to the declared white brand background, or deliberately adopt the dark theme AND apply accent #0ea5e9 to at least the key UI/text. Right now neither brand color is visible.",
+    "launch_readiness_and_call_to_action (score 3): add an explicit closing CTA (e.g. 'Get RankPal on the App Store' + rankpal.com) held >=1.5s in the FINAL scene.",
+    "brief length: shorten to ~20s (600 frames @30fps) if the 20s brief is authoritative, OR confirm the 70s narrative is the intended deliverable."
+  ],
+  "verdict": "fail"
+}

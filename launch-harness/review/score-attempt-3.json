@@ -1,0 +1,89 @@
+{
+  "attempt": 3,
+  "route": "category-3-remotion",
+  "artifact": "your product video project/out/attempt3-670f-crossfade.mp4",
+  "contact_sheet": "your product video project/out/a3-contact-sheet.png",
+  "probe": {
+    "duration_s": 22.378667,
+    "frames": 670,
+    "fps": 30,
+    "video": "h264 1920x1080",
+    "audio": "aac 48000 Hz stereo, peak -5.4 dB, mean -29.7 dB",
+    "size_bytes": 2816353
+  },
+  "brief": "20-second RankPal launch video. Scope for this attempt: brand accent applied correctly; crossfades between scene boundaries; a real CTA on the closing frame; length back to 20-22s (matching render.json's declared durationInFrames 670); explicit pass/fail on the third-party footage question, cited with a frame.",
+  "frames_reviewed": [
+    "your product video project/out/a3c/c005..c665.png (34 frames @ every 20) + c669.png (last frame)",
+    "your product video project/out/a3c/x218,x224,x230,x236.png (crossfade 1, through the dissolve)",
+    "your product video project/out/a3c/x445,x452,x458,x464.png (crossfade 2, through the dissolve)",
+    "your product video project/out/a3-contact-sheet.png (4x4 labelled grid, human review)",
+    "your product video project/out/a2b/luma3.txt (YAVG for ALL 670 frames)"
+  ],
+  "scope_results": {
+    "third_party_footage": {
+      "status": "PASS",
+      "question": "Is content from a third-party site/business/nate-barbershop (render.json layers 3-5) still in the rendered video?",
+      "answer": "No. It was never rendered. Confirmed by OCR on the attempt-3 timeline.",
+      "evidence": "ocr_frames.py --grep 'a third-party site,barbershop,nate,Barbershop,Nate,a third-party site' across 35 frames spanning the entire 670-frame render: 0 frames matched. The frames where that content WOULD have appeared (f245, f305, f365, f425, f445 - the whole changes scene) instead read: 'RankPal MCP / a competitor app changed 4 tracked fields / Description now mentions chess and more / Icon assets changed / Rating count increased / Version moved from 7.125.1 to 7.126.0'. That is RankPalChangesScene, a synthetic RankPal UI.",
+      "structural_confirmation": "S: SceneClip intercepts and replaces those three clips with RankPalChangesScene / RankPalActionPromptScene / RankPalDraftReadyScene; ClipRenderer is defined but never used, making the whole render.json -> EmbeddedScene path dead code. So the third-party reference is inert in the source AND absent from the pixels.",
+      "caveat": "The string still exists in render.json and src/generated/scene-manifest.json. It is unreachable at render time, but it should be deleted from those two files so it cannot be re-activated by a future refactor."
+    },
+    "crossfades": {
+      "status": "PASS (fixed in this attempt)",
+      "before": "dip-to-black: global min YAVG 14.6; top two single-frame luma jumps were the two cuts at 82.08 and 80.58",
+      "after": "true crossfade: global min YAVG 38.7; largest single-frame luma jump anywhere in the video is 18.58",
+      "evidence": "Boundary 1 (f221): flat 38.83 -> 38.76 before the cut, then a 12-step linear ramp 38.76 -> 56.63 -> 74.10 -> 91.47 -> 109.08 -> 126.66 -> 144.39 -> 161.46 -> 179.61 -> 197.30 -> 214.08 -> 231.13 -> 249.70 (steps of ~17.8, exactly XF_FRAMES = 12). Boundary 2 (f451): mirror image, flat 248.90 then a 12-step linear descent to 38.67. No black trough. Neither boundary appears in the top-8 luma-jump list any more - they are now indistinguishable from ordinary in-scene motion.",
+      "implementation": "Replaced SceneDipOverlay (black overlay, DIP_RADIUS 9, max opacity 0.62) with CrossfadeScene. Scenes are stacked so the OUTGOING scene stays at opacity 1 and only the INCOMING scene fades 0 -> 1 over XF_FRAMES = 12 (0.40s). Fading only the top layer avoids the mid-dissolve darkening you get from fading both layers at once. Non-final scenes are held XF_FRAMES past their solo end; scene starts stay at 0 / 221 / 451 and the last scene still ends at exactly 670."
+    },
+    "brand_accent": {
+      "status": "PASS",
+      "evidence": "P (accent #0ea5e9, tol 30): title scene 4,782-5,198 px (0.23-0.25%) at f105-f185; changes scene 319-322 px (0.02%) at f265-f405 (was 0-5 px in attempt 2); CTA scene 8,196-9,715 px (0.40-0.47%) at f485-f669. All three scenes now carry the spec accent.",
+      "fix": "Applied BRAND_ACCENT to the '4 detected' badge and to the leading '4' in '4 fields changed' inside RankPalChangesScene.",
+      "open_item": "Source still contains BRAND_BLUE #0562ef (used at :659 :904 :993 :1422 :1475) alongside the spec accent #0ea5e9. Two competing blues. Measured, #0562ef renders at only 0.00-0.03% of pixels, so the leak is minor - but picking one blue is a human/brand decision, not mine to make."
+    },
+    "cta": {
+      "status": "PASS",
+      "evidence": "OCR (P) on f669, the final rendered frame: 'rankpal.app / Accelerate / App Store'. P: accent-colored CTA measures 9,715 px (0.47%), stable from f645 through f669 -> holds on screen for the last ~0.8s and is present to the final frame."
+    },
+    "length": {
+      "status": "PASS",
+      "evidence": "M: ffprobe nb_frames = 670, duration 22.378667s. S: render.json declares durationInFrames: 670. Exact match. The drift is fixed (attempt 1 rendered 2101 frames / 70.08s because the TSX hardcoded a 7-scene narrative). 22.38s is at the top edge of the 20-22s window; the user's binding instruction was to match the declared 670, which is exact."
+    }
+  },
+  "dimension_scores": {
+    "hook_and_value_clarity":             4,
+    "product_capability_accuracy":        4,
+    "brand_consistency_and_visual_craft": 4,
+    "motion_continuity_and_pacing":       5,
+    "narration_quality_and_audio":        3,
+    "subtitle_readability_and_optional_playback": null,
+    "launch_readiness_and_call_to_action": 4,
+    "brief_length_match":                 5
+  },
+  "evidence": {
+    "hook_and_value_clarity": "OCR (P): f025/f065 'Introducing RankPal'; f085 onward 'Introducing RankPal / Claude for / App Store'. Lands at t=2.83s, inside the 3s window. Docked 1: f005 reads 0 text blocks (~0.2s dead air at the top) and the delivered hook copy is not render.json's declared 'A new way to grow on the App Store'. Unchanged from attempt 2 - not in scope, scoring carried forward.",
+    "product_capability_accuracy": "OCR (P): 'RankPal MCP / a competitor app changed 4 tracked fields' with four before->after field diffs. Demonstrated, not asserted. Docked 1 for density (35 text blocks in one frame) - unchanged from attempt 2, not in scope.",
+    "brand_consistency_and_visual_craft": "P: accent #0ea5e9 now present in all three scenes (0.23-0.25% title, 0.02% changes, 0.40-0.47% CTA). Up from 3 because the 34%-of-runtime changes scene went from 0 to a measurable accent. Held at 4 rather than 5 because the BRAND_BLUE #0562ef vs #0ea5e9 conflict is unresolved - that is a brand decision for the user.",
+    "motion_continuity_and_pacing": "M: YAVG all 670 frames. Global min 38.7 (was 14.6) - the near-black trough is gone. Largest single-frame luma jump 18.58 (was 82.08), a 4.4x reduction. Both boundaries show flat lead-in followed by a clean 12-frame linear dissolve. Top-8 luma jumps are now all ~17-18 and all belong to the crossfade ramps themselves - no discontinuity anywhere.",
+    "narration_quality_and_audio": "M: aac 48kHz stereo, peak -5.4 dB (no clipping), mean -29.7 dB - clean. RMS envelope @ 30fps: 10 discrete SFX onsets, identical to attempt 2 (audio bed untouched by this attempt). Boundary 1 (f221) has a cue at f213 (-0.27s). Boundary 2 (f451) still has NO cue within +/-0.8s (nearest f427 = -0.80s, f480 = +0.97s). S: RankPalAudioBed receives audioSceneStarts built from the ORIGINAL 7-scene layout while only 3 scenes render - the schedule no longer maps to what is on screen. NOT IN SCOPE for this attempt; flagged, not fixed.",
+    "subtitle_readability_and_optional_playback": "n/a - audio is music + SFX only, no dialogue or narration, and no caption track was requested. On-screen text is scene-internal UI/title copy, measured under hook / capability / CTA instead. Recorded as null; not scored.",
+    "launch_readiness_and_call_to_action": "OCR (P) f669: 'rankpal.app / Accelerate / App Store'. P: 9,715 accent px (0.47%) holding through the final frame. Held at 4 rather than 5: the CTA is small (0.47% of pixels) and there is no explicit action verb ('Get', 'Start', 'Install') - 'Accelerate' is a tagline, not an instruction.",
+    "brief_length_match": "M: 670 frames / 22.378667s. S: render.json durationInFrames 670. Exact match to the validated spec; the 2101-frame drift is fixed. Per the new dimension's own rule, the drift was treated as the bug and the composition was trimmed back to the spec rather than accepting the longer cut as intended."
+  },
+  "na_dimensions": {
+    "subtitle_readability_and_optional_playback": "no dialogue/narration; no captions requested"
+  },
+  "blockers": [
+    "AUDIO/SCENE DESYNC (carried forward, out of scope this attempt): the audio bed is keyed to the original 7-scene layout but only 3 scenes render. Measured effect: scene boundary 2 (f451) has no audio cue within +/-0.8s, so the second scene change lands with no sonic punctuation. This is the only dimension still below the 4/5 floor.",
+    "UNRESOLVED BRAND DECISION: BRAND_BLUE #0562ef and spec accent #0ea5e9 both exist in source. Rendering is only 0.00-0.03% #0562ef so the visual leak is minor, but one of the two blues should be deleted.",
+    "DEAD THIRD-PARTY REFERENCE NOT DELETED: 'a third-party site/business/nate-barbershop' still sits in render.json and src/generated/scene-manifest.json. Verified unreachable at render time (0 OCR matches across 35 frames), but it should be removed so a future refactor cannot re-activate it."
+  ],
+  "localized_repairs": [
+    "audio: rebuild audioSceneStarts from the current 3-scene scenesInOrder instead of the original 7-scene layout, then add a short transition SFX at f451 to match the one already present at f221.",
+    "brand: delete either BRAND_BLUE (#0562ef) or BRAND_ACCENT (#0ea5e9) once the user confirms which blue is canonical; collapse the remaining usages onto the survivor.",
+    "hygiene: strip the a third-party site/barbershop strings from render.json and scene-manifest.json now that the third-party path is confirmed dead."
+  ],
+  "scored_average": 4.14,
+  "verdict": "fail",
+  "verdict_reason": "7 of 8 dimensions at or above the 4/5 floor (hook 4, capability 4, brand 4, motion 5, CTA 4, length 5; subtitle n/a). All five items in the attempt scope - third-party footage, crossfades, brand accent, CTA, length - are PASS. narration_quality_and_audio remains at 3 because of the scene desync introduced by the trim, which was outside this attempt's scope. Per the gate an individual dimension below 4 cannot be offset by the average, so this does not clear the bar until the audio bed is re-keyed to the 3-scene timeline."
+}

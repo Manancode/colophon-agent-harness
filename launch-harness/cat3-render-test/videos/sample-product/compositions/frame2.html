@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      @font-face {
+        font-family: "Cal Sans";
+        src: url("assets/fonts/fdN99sWUv3gWqXxqqRBStFs04A.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Fragment Mono";
+        src: url("assets/fonts/7BdZvxJKUpWpvHI6sT2rPGFJguo.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; }
+
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        container-type: size;
+        background-color: #ffffff;
+        background-image:
+          linear-gradient(rgba(0, 153, 255, 0.10) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 153, 255, 0.10) 1px, transparent 1px);
+        background-size: 2cqw 2cqw, 2cqw 2cqw;
+        color: #0077cc;
+        overflow: hidden;
+      }
+
+      .hairline {
+        position: absolute;
+        left: 4cqw;
+        right: 4cqw;
+        height: 0.15cqw;
+        background: #0099ff;
+      }
+      .hairline.top { top: 3cqw; }
+      .hairline.bottom { bottom: 3cqw; }
+
+      .kicker {
+        position: absolute;
+        top: 5.6cqw;
+        left: 4cqw;
+        font-family: "Fragment Mono", monospace;
+        font-size: 1.5cqw;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #0077cc;
+      }
+
+      .wordmark {
+        position: absolute;
+        top: 12cqw;
+        left: 4cqw;
+        width: 18cqw;
+        height: 18cqw;
+        object-fit: contain;
+        object-position: left center;
+        z-index: 2;
+      }
+
+      .headline {
+        position: absolute;
+        top: 34cqw;
+        left: 4cqw;
+        width: 82cqw;
+        z-index: 2;
+        font-family: "Cal Sans", serif;
+        font-weight: 400;
+        font-size: 5.4cqw;
+        line-height: 1.02;
+        letter-spacing: -0.01em;
+        color: #0077cc;
+      }
+      .headline .soft { color: #005bb0; }
+
+      .plate {
+        position: absolute;
+        right: 2cqw;
+        top: 8cqw;
+        width: 60cqw;
+        opacity: 0.92;
+        z-index: 1;
+        border: 0.15cqw solid rgba(0, 153, 255, 0.35);
+      }
+
+      .pagenum {
+        position: absolute;
+        bottom: 1.2cqw;
+        right: 4cqw;
+        font-family: "Fragment Mono", monospace;
+        font-size: 1.3cqw;
+        letter-spacing: 0.06em;
+        color: #0077cc;
+      }
+
+      .anim { will-change: transform, opacity; }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="frame2"
+      data-layout-allow-overlap
+      data-duration="7.5"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div class="hairline top"></div>
+      <div class="hairline bottom"></div>
+
+      <div class="kicker anim" data-anim="kicker" data-layout-allow-overlap>THE PRODUCT</div>
+      <img class="wordmark anim" data-anim="mark" src="assets/h1nrvsav2h8jownvwasdy8gfjk.png" alt="Cal.com" />
+      <img class="plate anim" data-anim="plate" src="assets/scroll-010.png" alt="" />
+
+      <div class="headline anim" data-anim="headline" data-layout-allow-overlap>
+        Cal.com is the <span class="soft" data-layout-allow-overlap>better way</span><br />to schedule your meetings.
+      </div>
+
+      <div class="pagenum" data-layout-allow-overlap>02 / 04</div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js" integrity="sha384-sG0Hv1tP1lZCk9KQmrIbY/XNwi+OY84GQqhMscbnsoBFqAz8KNCil1kvfL3Hbbk2" crossorigin="anonymous"></script>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      // the one Z-push: camera moves forward into the page
+      tl.from('[data-anim="mark"]', { scale: 0.8, opacity: 0, duration: 0.7, ease: "power3.out", transformOrigin: "left center" });
+      tl.from('[data-anim="plate"]', { scale: 1.08, opacity: 0, duration: 0.8, ease: "power2.out" }, "-=0.5");
+      tl.from('[data-anim="headline"]', { y: 40, opacity: 0, duration: 0.7, ease: "power3.out" }, "-=0.4");
+      window.__timelines["frame2"] = tl;
+    </script>
+  </body>
+</html>

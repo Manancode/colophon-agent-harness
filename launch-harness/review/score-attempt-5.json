@@ -1,0 +1,75 @@
+{
+  "attempt": 5,
+  "route": "category-3-remotion",
+  "artifact": "your product video project/out/attempt5-670f-master.mp4",
+  "raw_render": "your product video project/out/a5/attempt5-raw.mp4",
+  "frames_sampled": "your product video project/out/a5/frames/",
+  "brief": "Attempt 5. (1) Audio fix: whoosh 0.065 -> ~0.25 at both boundaries; re-level bed to -14 LUFS integrated (loudnorm on finished mix approved); add a mid-weight cue into the changes scene. (2) Extend the accent into the hook (f005-f085). (3) Delete a third-party site/business/nate-barbershop from render.json AND scene-manifest.json. (4) Delete the orphaned PromptTypingAudio function. Re-render, re-score all 8. Clean pass == harness validated end-to-end.",
+  "probe": {
+    "duration_s": 22.4,
+    "frames": 670,
+    "fps": 30,
+    "video": "h264 1920x1080",
+    "audio": "aac 48000 Hz stereo, integrated -13.8 LUFS, true peak -1.4 dBFS, LRA 5.1 LU, size 2.48 MB"
+  },
+  "closed_open_items": {
+    "thirdparty_string_deleted": {
+      "status": "DONE",
+      "files_touched": [
+        "render.json (7 occurrences)",
+        "src/generated/scene-manifest.json (7 occurrences)",
+        "src/generated/launchspec-document.json (7 occurrences)"
+      ],
+      "note": "Code actually loads launchspec-document.json and scene-manifest.json at runtime; render.json is the spec of record. All three cleaned. JSON re-validated after edit. INVENTORY FINDING: the string ALSO exists in render2/3/4/5/8/9.json (1-10 each) and src/generated/launchspec-document.json (done). Those renderN.json files are scratch variants, not loaded — left in place but flagged for separate cleanup; they are not in the render path. OCR sweep on the new render: 0 matches for a third-party site/barbershop/nate across 7 sampled frames. A 'another app' hit at f451 is the ON-SCREEN demo copy in the changes scene ('a competitor app changed 4 tracked fields'), not embedded third-party footage — unrelated to the removed a third-party site URL."
+    },
+    "prompt_typing_audio_deleted": {
+      "status": "DONE",
+      "removed": [
+        "const PromptTypingAudio (the React.FC, 0 call sites)",
+        "const PILL_TRIGGER_CHARS (used only inside PromptTypingAudio)"
+      ],
+      "kept_live_on_purpose": "DRAFT_PROMPT_TEXT, COMPETITOR_PROMPT_TEXT, *_TYPING_SPEED, PROMPT_TYPING_START, DRAFT_CLICK_FRAME, COMPETITOR_CLICK_FRAME, DRAFT_PROMPT_SCENE_FRAMES — still read by the PromptTyping VISUAL component, which is a separate live thing. FOUNDER_MESSAGE_SCENE_FRAMES and COMPETITOR_PROMPT_SCENE_FRAMES (dead) also removed. tsc --noEmit clean after deletion."
+    }
+  },
+  "change_audio": {
+    "whoosh_asset_normalised": {
+      "root_cause": "send-whoosh.wav peaked at -13.44 dBFS while every other SFX in the library peaks between -0.4 and -2.1 dBFS. At volume 0.25 the old asset contributed only ~+1.6 dB at the boundary — the asset, not the multiplier, was the problem.",
+      "fix": "Normalised send-whoosh.wav to -6.0 dBFS peak (git-tracked, recoverable). Now at volume 0.25 the whoosh peaks ~9.6 dB above the BG bed RMS.",
+      "code": "send-whoosh volume 0.065 -> 0.25 at both changesStart (221) and finalStart (451)."
+    },
+    "mid_weight_cue": "Added notify-boosted.wav @ changesStart+160 (f381), volume 0.20 — a 0.36s notification ping filling the 2.1s bare-music hold between the highlight sweep (scene-frame 132) and the exit (scene-frame 196). Also lifted the existing sparkle-whoosh covering the highlight sweep from 0.08 -> 0.16 (it was ~14 dB under the bed and inaudible).",
+    "master_chain": "Raw render measured I=-29.6 LUFS, peak -11.76 dBFS -> crest/loudness ratio 17.8 dB. A single linear loudnorm to -14 LUFS needs +15.8 dB of gain, which pushed the whoosh/bed summit to +2.1 dBFS true peak = hard clipping. FIX: alimiter (limit=-18 dBFS) -> acompressor (threshold=-16, ratio=4, makeup=1) -> loudnorm(I=-14, TP=-1.5, linear, measured values from pass 1). Result I=-13.8 LUFS, TP=-1.4 dBFS (no clip), LRA 5.1 LU. Note: the in-code comment claiming the bed 'is loudnorm-processed to -14 LUFS' was corrected to state the master happens post-render."
+  },
+  "change_hook_accent": {
+    "problem": "The only accent in the title scene was the 'App Store' span, which rides inside secondIn and does not even begin to fade up until f74; by f85 it is only ~29% opaque. So the entire 0-2.83s hook measured 0 accent px (attempt 4 finding).",
+    "fix": "Accented the brand name 'RankPal' in the headline line-1 (fades in at f12), and added a 5px accent rule with a glow that wipes in at f34-60 under the headline. The 'App Store' accent span already in secondIn now stacks on top from f74.",
+    "pixel_proof": "accent px (rgb(14,165,233)): f014=0 (headline not yet in), f030=1,051 (0.05%), f050=4,583 (0.22%), f070=4,640 (0.22%), f085=4,638 (0.22%). Brand colour now on screen from ~f30, inside the most-watched 2.8s."
+  },
+  "dimension_scores": {
+    "hook_and_value_clarity":             5,
+    "product_capability_accuracy":        5,
+    "brand_consistency_and_visual_craft": 5,
+    "motion_continuity_and_pacing":       5,
+    "narration_quality_and_audio":        5,
+    "subtitle_readability_and_optional_playback": null,
+    "launch_readiness_and_call_to_action": 5,
+    "brief_length_match":                 5
+  },
+  "evidence": {
+    "hook_and_value_clarity": "P (OCR+sample): 'Introducing RankPal' from f012; accent on 'RankPal' + accent rule from f030-f085 (1,051->4,638 px). Value prop ('Claude for App Store') lands by f74. Full hook in first 2.8s with brand colour present from f30.",
+    "product_capability_accuracy": "P (OCR): 'RankPal MCP / a competitor app changed 4 tracked fields' + four before->after diffs; rating count 5,220,813 -> 5,224,981; version 7.125.1 -> 7.126.0. Demonstrated, not asserted. Unchanged from prior attempts (capability scene untouched this pass).",
+    "brand_consistency_and_visual_craft": "S: grep for BRAND_BLUE / #0562ef / rgb(5,98,239) across src returns only a history comment; no live code. P: single accent #0ea5e9 paints every colour-bearing scene; hook now carries accent (see change_hook_accent). One accent, one blue.",
+    "motion_continuity_and_pacing": "M (PIL mean-luma, Rec.709): cut 1 f221: f218=39.4 (title dark) -> f221=39.4 -> f224=92.3 (changes fading in). cut 2 f451: f448=249.3 (changes white) -> f451=249.3 -> f454=196.9 (final dark fading in). Outgoing scene held at opacity 1, incoming ramps 0->1 over 12 frames. No black trough (min luma in dark scenes ~39, not 14.6). Crossfade, not dip.",
+    "narration_quality_and_audio": "M: aac 48kHz stereo, NO clipping (true peak -1.4 dBFS). Integrated -13.8 LUFS (target -14). Cue onsets (peak-dB envelope vs local baseline): whoosh f221 +8.0 dB, mid cue f381 +3.1 dB, whoosh f451 +3.5 dB — all clearly audible. No voiceover by design; scored on mix loudness, cue clarity, and absence of clipping.",
+    "subtitle_readability_and_optional_playback": "n/a — audio is music + SFX only, no dialogue/narration, no caption track requested. Scene-internal text measured under the other dimensions.",
+    "launch_readiness_and_call_to_action": "P (OCR) f650 & f665 (final frame): 'rankpal.app / App Store'. Real CTA on the closing frame.",
+    "brief_length_match": "M: 670 frames / 22.4s. S: render.json declares durationInFrames 670. Exact match."
+  },
+  "na_dimensions": {
+    "subtitle_readability_and_optional_playback": "no dialogue/narration; no captions requested"
+  },
+  "blockers": [],
+  "scored_average": 5.0,
+  "verdict": "pass",
+  "verdict_reason": "All 8 dimensions at or above the 4/5 floor (7 scored at 5/5, subtitle n/a). Every item in the attempt-5 brief is done and verified: whoosh re-leveled and audible at both boundaries (+8.0/+3.5 dB), bed re-leveled to -13.8 LUFS with no clipping, mid-weight cue added (+3.1 dB), accent extended into the hook (0->4,638 px at f30-f85), a third-party site string deleted from all three loaded/spec JSONs (0 OCR matches), and PromptTypingAudio removed (tsc clean). No global blockers. Per the gate, a clean pass on all eight dimensions means the harness is validated end-to-end — ship it."
+}

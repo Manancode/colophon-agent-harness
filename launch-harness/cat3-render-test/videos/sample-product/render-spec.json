@@ -1,0 +1,13 @@
+{
+  "$schema": "https://render-engine.example.com/schema/render-spec.json",
+  "registry": "https://registry.example.com/render-engine/main/registry",
+  "paths": {
+    "blocks": "compositions",
+    "components": "compositions/components",
+    "assets": "assets"
+  },
+  "media": {
+    "autoProxy": true
+  },
+  "authoringSkill": "product-launch-video"
+}

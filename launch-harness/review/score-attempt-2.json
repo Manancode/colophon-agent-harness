@@ -1,0 +1,55 @@
+{
+  "attempt": 2,
+  "route": "category-3-remotion",
+  "artifact": "your product video project/out/attempt2-670f-dip.mp4",
+  "contact_sheet": "your product video project/out/a2-contact-sheet.png",
+  "probe": {
+    "duration_s": 22.378667,
+    "frames": 670,
+    "fps": 30,
+    "video": "h264 1920x1080",
+    "audio": "aac 48000 Hz stereo, peak -5.4 dB, mean -29.7 dB",
+    "size_bytes": 2744702
+  },
+  "frames_reviewed": [
+    "your product video project/out/a2c/c005..c665.png (34 frames @ every 20) + c669.png (last frame)",
+    "your product video project/out/a2b/b1-216..226.png (boundary 1 @ 30fps)",
+    "your product video project/out/a2b/b2-446..456.png (boundary 2 @ 30fps)",
+    "your product video project/out/a2b/luma.txt (YAVG for ALL 670 frames)"
+  ],
+  "dimension_scores": {
+    "hook_and_value_clarity":             4,
+    "product_capability_accuracy":        4,
+    "brand_consistency_and_visual_craft": 3,
+    "motion_continuity_and_pacing":       3,
+    "narration_quality_and_audio":        3,
+    "subtitle_readability_and_optional_playback": null,
+    "launch_readiness_and_call_to_action": 4,
+    "brief_length_match":                 5
+  },
+  "evidence": {
+    "hook_and_value_clarity": "OCR (P): f025 and f065 read 'Introducing RankPal'; f085 onward reads 'Introducing RankPal / Claude for / App Store'. M: t=0.83s first line, t=2.83s full three-line hook. Names the product and uses a widely understood analogy inside 3s. Docked 1: f005 has 0 text blocks -> ~0.2s of dead air at the top, and the delivered hook copy is NOT render.json's declared line ('A new way to grow on the App Store').",
+    "product_capability_accuracy": "OCR (P): f245/f305/f365/f425/f445 all read 'RankPal MCP / a competitor app changed 4 tracked fields' with per-field before->after diffs (Description, Icon, Rating count, Version 7.125.1 -> 7.126.0). Capability is DEMONSTRATED, not asserted. Docked 1: 35 simultaneous text blocks in one frame is dense for a single 7.7s beat; also caught a copy defect (see blockers).",
+    "brand_consistency_and_visual_craft": "P (accent #0ea5e9, tol 30): title scene 4,782-5,198 px (0.23-0.25%) at f105-f185; CTA scene 8,084-9,729 px (0.39-0.47%) at f485-f669. BUT the changes scene (f221-451 = 34% of runtime) measures 0-5 px (0.00%) - accent effectively absent from the longest scene. Two competing blues remain in source: BRAND_BLUE #0562ef (used at :659 :904 :993 :1422 :1475) vs spec accent #0ea5e9.",
+    "motion_continuity_and_pacing": "M: YAVG for all 670 frames. Boundary 1 (f221): monotonic decline 38.80 -> 14.60 over f212-f220, then rise 95.19 -> 250.30 over f221-f230. Boundary 2 (f451): decline 248.82 -> 96.64 over f442-f450, then f451 = 14.56 rising to 38.67 by f460. Global min YAVG 14.6. Top two single-frame luma jumps are exactly the two boundaries (82.08 and 80.58); third-largest is 32.31. VERDICT: this is a real, intentional dip-to-black - NOT the 'hard cut' claimed in attempt 1 (attempt-1 score of 2 was wrong; corrected here). BUT it is also NOT the crossfade that was asked for: the outgoing ramp and incoming ramp never meet, leaving an ~80-luma discontinuity at each cut, with a near-black trough (14.6) between them.",
+    "narration_quality_and_audio": "M: aac 48kHz stereo, peak -5.4 dB (no clipping), mean -29.7 dB. RMS envelope @ 30fps finds 10 discrete SFX onsets. S: no voiceover; bed is bg-music + SFX. Alignment: boundary 1 (f221) HAS a cue at f213 (-0.27s). Boundary 2 (f451) has NO cue within +/-0.8s (nearest: f427 = -0.80s, f480 = +0.97s). S: RankPalAudioBed is fed audioSceneStarts built from the ORIGINAL 7-scene layout while only 3 scenes render, so cues fire on a schedule that no longer matches what is on screen.",
+    "subtitle_readability_and_optional_playback": "n/a - no dialogue or narration exists (audio is music + SFX only), and no caption track was requested. All on-screen text is scene-internal UI/title text, which is measured under brand/hook/CTA instead. Recorded as null; not scored.",
+    "launch_readiness_and_call_to_action": "OCR (P) on f669, the final frame: 'rankpal.app / Accelerate / App Store'. P: accent-colored CTA measures 9,729 px (0.47%) and holds from f625 through f669 -> on screen for the last ~1.5s. CORRECTION: attempt 1 scored this 3 on a grep for 'rankpal.com', which does not exist; the real string is 'rankpal.app'. That was a guessed search term under-scoring a CTA that was already present.",
+    "brief_length_match": "M: ffprobe nb_frames = 670, duration 22.379s. S: render.json declares durationInFrames: 670. 670 rendered vs 670 declared = exact match. The attempt-1 drift (TSX 2101 frames vs spec 670) is FIXED: scenesInOrder trimmed to 3 scenes, launchspecDurationInFrames = 670, TOTAL_FRAMES decoupled from the scene sum. 22.38s sits at the top edge of the requested 20-22s window; the binding constraint the user gave was 'match render.json's declared 670', which is exact."
+  },
+  "na_dimensions": {
+    "subtitle_readability_and_optional_playback": "no dialogue/narration; no captions requested"
+  },
+  "blockers": [
+    "CROSSFADE NOT DELIVERED (in scope, missed): attempt 2 shipped a dip-to-black, not a crossfade. Measured: near-black trough YAVG 14.6 at both cuts with ~80-luma discontinuities on either side. Root cause: SceneDipOverlay (black overlay, DIP_RADIUS 9, max opacity 0.62) instead of overlapping scenes with a dissolve.",
+    "COPY DEFECT: LaunchSpecJson.tsx:1172 rendered the rating count as '52,20,813' -> '52,24,981' - Indian lakh digit grouping in a US App Store context. Should be 5,220,813 -> 5,224,981. Confirmed visually via OCR on f365.",
+    "AUDIO/SCENE DESYNC (introduced by the trim, out of scope this attempt): audio bed is keyed to the original 7-scene layout but only 3 scenes render. Measured consequence: scene boundary 2 (f451) has no audio cue within +/-0.8s."
+  ],
+  "localized_repairs": [
+    "motion_continuity_and_pacing: replace SceneDipOverlay with a true crossfade - stack scenes so the outgoing scene stays at full opacity and only the incoming scene fades 0->1 (avoids the crossfade dip you get from fading both layers at once).",
+    "brand_consistency: apply accent #0ea5e9 inside the changes scene (f221-451), which is 34% of runtime and currently has ~0 accent px. Resolve the BRAND_BLUE #0562ef vs #0ea5e9 conflict - needs a human decision.",
+    "copy: fix the rating-count digit grouping at LaunchSpecJson.tsx:1172."
+  ],
+  "verdict": "fail",
+  "verdict_reason": "5 of 8 in scope (hook 4, capability 4, CTA 4, length 5, third-party PASS). Two dimensions below the 4/5 floor: motion_continuity 3 (dip-to-black, not the requested crossfade) and audio 3 (scene desync). Per the gate, an average cannot compensate for an individual dimension below 4."
+}

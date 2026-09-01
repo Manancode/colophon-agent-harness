@@ -1,0 +1,296 @@
+{
+  "tts_provider": "a local TTS model",
+  "voice_id": "am_michael",
+  "bgm": null,
+  "bgm_pending": false,
+  "voices": [
+    {
+      "id": "01",
+      "path": "assets/voice/01.wav",
+      "duration_s": 2.66,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Booking",
+          "start": 0.0,
+          "end": 0.451
+        },
+        {
+          "id": "w1",
+          "text": "a",
+          "start": 0.49,
+          "end": 0.554
+        },
+        {
+          "id": "w2",
+          "text": "meeting",
+          "start": 0.56,
+          "end": 1.011
+        },
+        {
+          "id": "w3",
+          "text": "shouldn't",
+          "start": 1.05,
+          "end": 1.63
+        },
+        {
+          "id": "w4",
+          "text": "take",
+          "start": 1.68,
+          "end": 1.938
+        },
+        {
+          "id": "w5",
+          "text": "six",
+          "start": 1.96,
+          "end": 2.153
+        },
+        {
+          "id": "w6",
+          "text": "emails.",
+          "start": 2.17,
+          "end": 2.621
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "path": "assets/voice/02.wav",
+      "duration_s": 3.65,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Cal.com",
+          "start": 0.0,
+          "end": 0.534
+        },
+        {
+          "id": "w1",
+          "text": "is",
+          "start": 0.581,
+          "end": 0.733
+        },
+        {
+          "id": "w2",
+          "text": "the",
+          "start": 0.747,
+          "end": 0.976
+        },
+        {
+          "id": "w3",
+          "text": "better",
+          "start": 0.995,
+          "end": 1.453
+        },
+        {
+          "id": "w4",
+          "text": "way",
+          "start": 1.493,
+          "end": 1.722
+        },
+        {
+          "id": "w5",
+          "text": "to",
+          "start": 1.742,
+          "end": 1.895
+        },
+        {
+          "id": "w6",
+          "text": "schedule",
+          "start": 1.908,
+          "end": 2.518
+        },
+        {
+          "id": "w7",
+          "text": "your",
+          "start": 2.572,
+          "end": 2.877
+        },
+        {
+          "id": "w8",
+          "text": "meetings.",
+          "start": 2.903,
+          "end": 3.59
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "path": "assets/voice/03.wav",
+      "duration_s": 9.96,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Fully",
+          "start": 0.0,
+          "end": 0.364
+        },
+        {
+          "id": "w1",
+          "text": "customizable.",
+          "start": 0.395,
+          "end": 1.341
+        },
+        {
+          "id": "w2",
+          "text": "Built",
+          "start": 1.423,
+          "end": 1.786
+        },
+        {
+          "id": "w3",
+          "text": "for",
+          "start": 1.818,
+          "end": 2.036
+        },
+        {
+          "id": "w4",
+          "text": "individuals,",
+          "start": 2.055,
+          "end": 2.928
+        },
+        {
+          "id": "w5",
+          "text": "for",
+          "start": 3.004,
+          "end": 3.222
+        },
+        {
+          "id": "w6",
+          "text": "businesses",
+          "start": 3.241,
+          "end": 3.968
+        },
+        {
+          "id": "w7",
+          "text": "taking",
+          "start": 4.031,
+          "end": 4.468
+        },
+        {
+          "id": "w8",
+          "text": "calls,",
+          "start": 4.506,
+          "end": 4.942
+        },
+        {
+          "id": "w9",
+          "text": "and",
+          "start": 4.98,
+          "end": 5.198
+        },
+        {
+          "id": "w10",
+          "text": "for",
+          "start": 5.217,
+          "end": 5.435
+        },
+        {
+          "id": "w11",
+          "text": "developers",
+          "start": 5.454,
+          "end": 6.182
+        },
+        {
+          "id": "w12",
+          "text": "building",
+          "start": 6.245,
+          "end": 6.827
+        },
+        {
+          "id": "w13",
+          "text": "scheduling",
+          "start": 6.877,
+          "end": 7.604
+        },
+        {
+          "id": "w14",
+          "text": "platforms",
+          "start": 7.668,
+          "end": 8.322
+        },
+        {
+          "id": "w15",
+          "text": "where",
+          "start": 8.379,
+          "end": 8.743
+        },
+        {
+          "id": "w16",
+          "text": "users",
+          "start": 8.774,
+          "end": 9.138
+        },
+        {
+          "id": "w17",
+          "text": "meet",
+          "start": 9.17,
+          "end": 9.46
+        },
+        {
+          "id": "w18",
+          "text": "users.",
+          "start": 9.486,
+          "end": 9.922
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "path": "assets/voice/04.wav",
+      "duration_s": 4.12,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Get",
+          "start": 0.0,
+          "end": 0.264
+        },
+        {
+          "id": "w1",
+          "text": "started",
+          "start": 0.287,
+          "end": 0.904
+        },
+        {
+          "id": "w2",
+          "text": "with",
+          "start": 0.958,
+          "end": 1.311
+        },
+        {
+          "id": "w3",
+          "text": "Cal.com.",
+          "start": 1.341,
+          "end": 2.047
+        },
+        {
+          "id": "w4",
+          "text": "No",
+          "start": 2.108,
+          "end": 2.284
+        },
+        {
+          "id": "w5",
+          "text": "credit",
+          "start": 2.3,
+          "end": 2.828
+        },
+        {
+          "id": "w6",
+          "text": "card",
+          "start": 2.874,
+          "end": 3.227
+        },
+        {
+          "id": "w7",
+          "text": "required.",
+          "start": 3.258,
+          "end": 4.051
+        }
+      ]
+    }
+  ],
+  "sfx": [],
+  "total_duration_s": 20.39
+}

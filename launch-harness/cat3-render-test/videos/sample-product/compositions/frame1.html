@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      @font-face {
+        font-family: "Cal Sans";
+        src: url("assets/fonts/fdN99sWUv3gWqXxqqRBStFs04A.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Fragment Mono";
+        src: url("assets/fonts/7BdZvxJKUpWpvHI6sT2rPGFJguo.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; }
+
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        container-type: size;
+        background-color: #ffffff;
+        background-image:
+          linear-gradient(rgba(0, 153, 255, 0.10) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 153, 255, 0.10) 1px, transparent 1px);
+        background-size: 2cqw 2cqw, 2cqw 2cqw;
+        color: #0077cc;
+        overflow: hidden;
+      }
+
+      .hairline {
+        position: absolute;
+        left: 4cqw;
+        right: 4cqw;
+        height: 0.15cqw;
+        background: #0099ff;
+      }
+      .hairline.top { top: 3cqw; }
+      .hairline.bottom { bottom: 3cqw; }
+
+      .kicker {
+        position: absolute;
+        top: 5.6cqw;
+        left: 4cqw;
+        font-family: "Fragment Mono", monospace;
+        font-size: 1.5cqw;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #0077cc;
+      }
+
+      .hero {
+        position: absolute;
+        top: 27cqw;
+        left: 4cqw;
+        width: 64cqw;
+        font-family: "Cal Sans", serif;
+        font-weight: 400;
+        font-size: 8.0cqw;
+        line-height: 0.98;
+        letter-spacing: -0.01em;
+        color: #0077cc;
+      }
+      .hero .soft { color: #005bb0; }
+
+      .faint-plate {
+        position: absolute;
+        right: -6cqw;
+        bottom: -4cqw;
+        width: 78cqw;
+        opacity: 0.10;
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      .glitch {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 26cqw;
+        height: 100%;
+        background-color: #ffffff;
+        background-image: repeating-linear-gradient(
+          90deg,
+          #0099ff 0, #0099ff 0.5cqw,
+          transparent 0.5cqw, transparent 2cqw
+        );
+        z-index: 1;
+        opacity: 0.9;
+        -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 18%, #000 82%, transparent 100%);
+        mask-image: linear-gradient(180deg, transparent 0%, #000 18%, #000 82%, transparent 100%);
+      }
+
+      .qr {
+        position: absolute;
+        top: 5.4cqw;
+        right: 6cqw;
+        width: 7cqw;
+        height: 7cqw;
+        background-color: #ffffff;
+        background-image:
+          linear-gradient(#0099ff 0 0) 0 0 / 25% 25% no-repeat,
+          linear-gradient(#0099ff 0 0) 75% 0 / 25% 25% no-repeat,
+          linear-gradient(#0099ff 0 0) 0 75% / 25% 25% no-repeat,
+          linear-gradient(#0099ff 0 0) 50% 50% / 25% 25% no-repeat,
+          linear-gradient(#0099ff 0 0) 100% 100% / 25% 25% no-repeat;
+        box-shadow: 0 0 0 0.15cqw #ffffff;
+        z-index: 2;
+      }
+
+      .pagenum {
+        position: absolute;
+        bottom: 1.2cqw;
+        right: 4cqw;
+        z-index: 3;
+        font-family: "Fragment Mono", monospace;
+        font-size: 1.3cqw;
+        letter-spacing: 0.06em;
+        color: #0077cc;
+      }
+      .meta {
+        position: absolute;
+        bottom: 1.2cqw;
+        left: 4cqw;
+        font-family: "Fragment Mono", monospace;
+        font-size: 1.3cqw;
+        letter-spacing: 0.06em;
+        color: #0077cc;
+      }
+
+      .anim { will-change: transform, opacity; }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="frame1"
+      data-layout-allow-overlap
+      data-duration="6.5"
+      data-width="1920"
+      data-height="1080"
+    >
+      <img class="faint-plate" src="assets/og-image.png" alt="" />
+      <div class="hairline top"></div>
+      <div class="hairline bottom"></div>
+      <div class="glitch"></div>
+      <div class="qr"></div>
+
+      <div class="kicker anim" data-anim="kicker" data-layout-allow-overlap>THE FRICTION · SCHEDULING</div>
+      <div class="hero anim" data-anim="hero" data-layout-allow-overlap>
+        Booking a meeting<br />shouldn't take<br /><span class="soft" data-layout-allow-overlap>six emails.</span>
+      </div>
+
+      <div class="meta" data-layout-allow-overlap>CAL.COM · GENERALITY TEST</div>
+      <div class="pagenum" data-layout-allow-overlap>01 / 04</div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js" integrity="sha384-sG0Hv1tP1lZCk9KQmrIbY/XNwi+OY84GQqhMscbnsoBFqAz8KNCil1kvfL3Hbbk2" crossorigin="anonymous"></script>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      tl.from('[data-anim="kicker"]', { opacity: 0, x: -40, duration: 0.5, ease: "power2.out" });
+      tl.from('[data-anim="hero"]', { opacity: 0, y: 50, duration: 0.7, ease: "power3.out" }, "-=0.2");
+      window.__timelines["frame1"] = tl;
+    </script>
+  </body>
+</html>

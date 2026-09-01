@@ -1,0 +1,233 @@
+<template id="captions-template" data-composition-id="captions" data-width="1920" data-height="1080">
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+
+
+<style data-brand-tokens>
+      @font-face { font-family: 'Cal Sans'; src: url('assets/fonts/CalSans-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
+      :root {
+      --paper: #FFFFFF;
+      --paper-2: #374151;
+      --ink: #000000;
+      --ink-soft: #0099FF;
+      --grid: rgba(0, 153, 255, 0.10);
+      --ink-faint: rgba(0, 153, 255, 0.18);
+      --cap-ink: #000000;
+      --cap-canvas: #FFFFFF;
+      --cap-accent: #0099FF;
+      --cap-accent-2: #374151;
+      --font-display: "Cal Sans", system-ui, serif;
+      --font-body: "Cal Sans", system-ui, sans-serif;
+      --cap-band-top: 900px;
+      --cap-band-height: 180px;
+      }
+    </style>
+
+<style>
+  #captions-root {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .caption-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    pointer-events: none;
+  }
+  /* the keep-out band, from captionBand(H) — frame content stays above it */
+  .caption-stage {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: var(--cap-band-top, 900px);
+    height: var(--cap-band-height, 180px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .caption-group {
+    /* every group is absolutely stacked over the SAME band — exactly one shown at a
+       time via opacity. Must be absolute: in-flow groups would lay out side-by-side. */
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+  }
+
+  /* THE cream card — graph-paper grid behind the line + top/bottom 1.5px cobalt
+     hairlines (cobalt's frame furniture), square corners, NO drop shadow */
+  .caption-pill {
+    position: relative;
+    max-width: 78%;
+    padding: 20px 44px 24px;
+    background: var(--cap-canvas, #f0ebde);
+    background-image:
+      linear-gradient(
+        to right,
+        color-mix(in srgb, var(--cap-ink, #1f2be0) 10%, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--cap-ink, #1f2be0) 10%, transparent) 1px,
+        transparent 1px
+      );
+    background-size: 16px 16px;
+    border-top: 1.5px solid var(--cap-ink, #1f2be0);
+    border-bottom: 1.5px solid var(--cap-ink, #1f2be0);
+    border-radius: 0;
+  }
+  .caption-line {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.1em 0.34em;
+    font-family: "Cal Sans", Georgia, serif;
+    font-weight: 400;
+    font-size: clamp(40px, 4.4vw, 58px);
+    line-height: 1.16;
+    letter-spacing: -0.01em;
+  }
+
+  /* upcoming — faint cobalt, no block */
+  .caption-word {
+    display: inline-block;
+    padding: 0 0.06em;
+    color: color-mix(in srgb, var(--cap-ink, #1f2be0) 42%, var(--cap-canvas, #f0ebde));
+  }
+  /* current word — THE cobalt flat block (risograph knockout): a solid cobalt fill
+     via box-shadow spread = a hard square block w/o layout shift, no blur; the cream
+     paper reads on top */
+  .caption-word.is-active {
+    color: var(--cap-canvas, #f0ebde);
+    background: var(--cap-ink, #1f2be0);
+    box-shadow: 0 0 0 0.06em var(--cap-ink, #1f2be0);
+  }
+  /* already spoken — solid cobalt ink, block cleared */
+  .caption-word.is-spoken {
+    color: var(--cap-ink, #1f2be0);
+    background: transparent;
+    box-shadow: none;
+  }
+
+  /* optional per-word accents (dormant until a word-classer tags them) */
+  /* brand / key term — Newsreader italic, cobalt's only display inflection */
+  .caption-word.cap-brand {
+    font-style: italic;
+  }
+  /* numerals / data — the body sans voice, slightly recessed */
+  .caption-word.cap-num {
+    font-family: "Cal Sans", ui-monospace, monospace;
+    color: color-mix(in srgb, var(--cap-ink, #1f2be0) 72%, var(--cap-canvas, #f0ebde));
+  }
+  /* emphasis — a cobalt hairline underline (no second hue; emphasis is the ink) */
+  .caption-word.cap-cta {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-decoration-color: var(--cap-accent, #5560e5);
+    text-underline-offset: 0.1em;
+  }
+
+  @media (max-aspect-ratio: 9/16) {
+    .caption-pill {
+      max-width: 92%;
+    }
+    .caption-line {
+      font-size: clamp(34px, 5.4vw, 48px);
+    }
+  }
+</style>
+
+<div
+  id="captions-root"
+  data-composition-id="captions"
+  data-timeline-locked
+  data-start="0"
+  data-duration="30"
+  data-fps="30"
+  data-width="1920"
+  data-height="1080"
+>
+  <div class="caption-layer" aria-hidden="true">
+    <div id="caption-stage" class="caption-stage"></div>
+  </div>
+</div>
+
+<script>
+  // captions.mjs injects the engine's scene-aware groups + real duration here.
+  var GROUPS = [{"id":"caption-group-0","frame":1,"start":0,"end":1.05,"text":"Booking a meeting","words":[{"id":"caption-word-0-0","text":"Booking","start":0,"end":0.451},{"id":"caption-word-0-1","text":"a","start":0.49,"end":0.554},{"id":"caption-word-0-2","text":"meeting","start":0.56,"end":1.011}]},{"id":"caption-group-1","frame":1,"start":1.05,"end":2.17,"text":"shouldn't take six","words":[{"id":"caption-word-1-0","text":"shouldn't","start":1.05,"end":1.63},{"id":"caption-word-1-1","text":"take","start":1.68,"end":1.938},{"id":"caption-word-1-2","text":"six","start":1.96,"end":2.153}]},{"id":"caption-group-2","frame":1,"start":2.17,"end":2.741,"text":"emails.","words":[{"id":"caption-word-2-0","text":"emails.","start":2.17,"end":2.621}]},{"id":"caption-group-3","frame":2,"start":6,"end":6.747,"text":"Cal.com is","words":[{"id":"caption-word-3-0","text":"Cal.com","start":6,"end":6.534},{"id":"caption-word-3-1","text":"is","start":6.581,"end":6.733}]},{"id":"caption-group-4","frame":2,"start":6.747,"end":7.493,"text":"the better","words":[{"id":"caption-word-4-0","text":"the","start":6.747,"end":6.976},{"id":"caption-word-4-1","text":"better","start":6.995,"end":7.453}]},{"id":"caption-group-5","frame":2,"start":7.493,"end":8.572,"text":"way to schedule","words":[{"id":"caption-word-5-0","text":"way","start":7.493,"end":7.722},{"id":"caption-word-5-1","text":"to","start":7.742,"end":7.895},{"id":"caption-word-5-2","text":"schedule","start":7.908,"end":8.518}]},{"id":"caption-group-6","frame":2,"start":8.572,"end":9.71,"text":"your meetings.","words":[{"id":"caption-word-6-0","text":"your","start":8.572,"end":8.877},{"id":"caption-word-6-1","text":"meetings.","start":8.903,"end":9.59}]},{"id":"caption-group-7","frame":3,"start":13,"end":14.423,"text":"Fully customizable.","words":[{"id":"caption-word-7-0","text":"Fully","start":13,"end":13.364},{"id":"caption-word-7-1","text":"customizable.","start":13.395,"end":14.341}]},{"id":"caption-group-8","frame":3,"start":14.423,"end":16.004,"text":"Built for individuals,","words":[{"id":"caption-word-8-0","text":"Built","start":14.423,"end":14.786},{"id":"caption-word-8-1","text":"for","start":14.818,"end":15.036},{"id":"caption-word-8-2","text":"individuals,","start":15.055,"end":15.928}]},{"id":"caption-group-9","frame":3,"start":16.004,"end":17.98,"text":"for businesses taking calls,","words":[{"id":"caption-word-9-0","text":"for","start":16.004,"end":16.222},{"id":"caption-word-9-1","text":"businesses","start":16.241,"end":16.968},{"id":"caption-word-9-2","text":"taking","start":17.031,"end":17.468},{"id":"caption-word-9-3","text":"calls,","start":17.506,"end":17.942}]},{"id":"caption-group-10","frame":3,"start":17.98,"end":19.245,"text":"and for developers","words":[{"id":"caption-word-10-0","text":"and","start":17.98,"end":18.198},{"id":"caption-word-10-1","text":"for","start":18.217,"end":18.435},{"id":"caption-word-10-2","text":"developers","start":18.454,"end":19.182}]},{"id":"caption-group-11","frame":3,"start":19.245,"end":21.774,"text":"building scheduling platforms where","words":[{"id":"caption-word-11-0","text":"building","start":19.245,"end":19.827},{"id":"caption-word-11-1","text":"scheduling","start":19.877,"end":20.604},{"id":"caption-word-11-2","text":"platforms","start":20.668,"end":21.322},{"id":"caption-word-11-3","text":"where","start":21.379,"end":21.743}]},{"id":"caption-group-12","frame":3,"start":21.774,"end":23,"text":"users meet users.","words":[{"id":"caption-word-12-0","text":"users","start":21.774,"end":22.138},{"id":"caption-word-12-1","text":"meet","start":22.17,"end":22.46},{"id":"caption-word-12-2","text":"users.","start":22.486,"end":22.922}]},{"id":"caption-group-13","frame":4,"start":23,"end":24.341,"text":"Get started with","words":[{"id":"caption-word-13-0","text":"Get","start":23,"end":23.264},{"id":"caption-word-13-1","text":"started","start":23.287,"end":23.904},{"id":"caption-word-13-2","text":"with","start":23.958,"end":24.311}]},{"id":"caption-group-14","frame":4,"start":24.341,"end":25.108,"text":"Cal.com.","words":[{"id":"caption-word-14-0","text":"Cal.com.","start":24.341,"end":25.047}]},{"id":"caption-group-15","frame":4,"start":25.108,"end":26.258,"text":"No credit card","words":[{"id":"caption-word-15-0","text":"No","start":25.108,"end":25.284},{"id":"caption-word-15-1","text":"credit","start":25.3,"end":25.828},{"id":"caption-word-15-2","text":"card","start":25.874,"end":26.227}]},{"id":"caption-group-16","frame":4,"start":26.258,"end":27.171,"text":"required.","words":[{"id":"caption-word-16-0","text":"required.","start":26.258,"end":27.051}]}];
+  var DURATION = 30;
+
+  (function () {
+    var stage = document.getElementById("caption-stage");
+
+    // build DOM: one .caption-group per group, .caption-word per word
+    GROUPS.forEach(function (group, g) {
+      var groupEl = document.createElement("div");
+      groupEl.className = "caption-group";
+      groupEl.id = "caption-group-" + g;
+      var pill = document.createElement("div");
+      pill.className = "caption-pill";
+      var line = document.createElement("div");
+      line.className = "caption-line";
+      (group.words || []).forEach(function (w, i) {
+        var span = document.createElement("span");
+        span.className = "caption-word";
+        span.setAttribute("data-layout-allow-overlap", "");
+        span.id = "caption-word-" + g + "-" + i;
+        span.textContent = String(w.text);
+        line.appendChild(span);
+      });
+      pill.appendChild(line);
+      groupEl.appendChild(pill);
+      stage.appendChild(groupEl);
+    });
+
+    window.__timelines = window.__timelines || {};
+    var tl = gsap.timeline({ paused: true });
+
+    GROUPS.forEach(function (group, g) {
+      var groupEl = document.getElementById("caption-group-" + g);
+      var words = group.words || [];
+      var next = GROUPS[g + 1];
+      var isLast = g === GROUPS.length - 1;
+      var start = Math.max(0, Number(group.start));
+      var end = isLast ? DURATION : Math.min(Number(next.start), Number(group.end) + 0.3);
+      if (end <= start) end = start + 0.01;
+
+      // group on/off — exactly one group visible at a time
+      tl.set(groupEl, { opacity: 1 }, start);
+      tl.set(groupEl, { opacity: 0 }, end);
+
+      // 3-state karaoke via className SETS — seek-safe (gsap.set applies on the
+      // engine's frame-by-frame seek; .call callbacks would NOT fire).
+      words.forEach(function (w, i) {
+        var el = document.getElementById("caption-word-" + g + "-" + i);
+        var at = Math.max(start, Number(w.start));
+        tl.set(el, { className: "caption-word" }, start); // upcoming (also resets on reverse-seek)
+        tl.set(el, { className: "caption-word is-active" }, at); // current
+        tl.fromTo(el, { scale: 0.985 }, { scale: 1, duration: 0.1, ease: "power3.out" }, at);
+        if (i + 1 < words.length) {
+          var nextAt = Math.max(start, Number(words[i + 1].start));
+          tl.set(el, { className: "caption-word is-spoken" }, nextAt); // demote when next activates
+        }
+      });
+      if (words.length) {
+        var lastEl = document.getElementById("caption-word-" + g + "-" + (words.length - 1));
+        var lastSpoken = Math.min(end, Number(words[words.length - 1].end) + 0.1);
+        tl.set(lastEl, { className: "caption-word is-spoken" }, lastSpoken);
+      }
+    });
+
+    // full-span anchor so the sub-comp timeline spans the whole video
+    tl.to({}, { duration: DURATION }, 0);
+    window.__timelines["captions"] = tl;
+  })();
+</script>
+
+<style>
+  .caption-line { line-height: 1.1 !important; }
+</style>
+</template>

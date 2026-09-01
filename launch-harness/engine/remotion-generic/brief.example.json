@@ -1,0 +1,18 @@
+{
+  "name": "Example",
+  "tagline": "A short line explaining what the product actually does",
+  "accentColor": "#0ea5e9",
+  "backgroundColor": "#ffffff",
+  "durationInFrames": 300,
+  "fps": 30,
+  "width": 1920,
+  "height": 1080,
+  "features": [
+    "First capability",
+    "Second capability",
+    "Third capability"
+  ],
+  "screenshotUrl": null,
+  "ctaText": "Get Example",
+  "ctaUrl": "example.com"
+}

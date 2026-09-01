@@ -1,0 +1,11 @@
+{
+  "name": "sample-product",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes render-engine@0.8.22 preview",
+    "check": "npx --yes render-engine@0.8.22 check",
+    "render": "npx --yes render-engine@0.8.22 render",
+    "publish": "npx --yes render-engine@0.8.22 publish"
+  }
+}
